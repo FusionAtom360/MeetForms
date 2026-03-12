@@ -438,7 +438,7 @@
         </div>
         <div class="field">
           <label class="fl">Location</label>
-          <input type="text" id="new-location"/>
+          <input type="text" id="new-location" placeholder="Oakdale High School Pool"/>
         </div>
         <div class="field">
           <label class="fl">Date</label>
@@ -1394,17 +1394,19 @@ function printEntries() {
     '.header { margin-bottom: 16px; border-bottom: 3px solid #0077b6; padding-bottom: 8px; }' +
     '.header h1 { margin: 0 0 2px 0; font-size: 20px; color: #0077b6; }' +
     '.header p { margin: 2px 0; font-size: 12px; color: #666; }' +
-    '.event-group { margin-bottom: 24px; }' +
+    '.event-groups { column-count: 2; column-gap: 18px; }' +
+    '.event-group { margin-bottom: 20px; break-inside: avoid; page-break-inside: avoid; display: inline-block; width: 100%; }' +
     '.event-group h2 { margin: 0 0 6px 0; font-size: 13px; color: #0077b6; font-weight: bold; }' +
     'table { border-collapse: collapse; table-layout: fixed; }' +
     'th { background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-weight: bold; font-size: 11px; text-transform: uppercase; }' +
     'td { border: 1px solid #ddd; padding: 6px 8px; font-size: 13px; }' +
+    '@media print { .event-groups { column-count: 2; } }' +
     '</style></head><body>' +
     '<div class="header">' +
     '<h1>' + escapeHtml(meet.name) + '</h1>' +
     '<p><strong>Date:</strong> ' + meet.date + ' · <strong>Course:</strong> ' + meet.course + (meet.location ? ' · <strong>Location:</strong> ' + escapeHtml(meet.location) : '') + '</p>' +
     '</div>' +
-    groupsHtml +
+    '<div class="event-groups">' + groupsHtml + '</div>' +
     '</body></html>';
   
   const printWindow = window.open('', '', 'height=600,width=1000');
