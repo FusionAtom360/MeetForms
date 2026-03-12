@@ -1343,26 +1343,39 @@ function printEntries() {
   if (!meet) { toast('Meet not found.', 'error'); return; }
   
   const entries = getFilteredEntries();
-  const athletes = new Set(entries.map(e => e.last_name + '|' + e.first_name + '|' + e.team)).size;
-  const teams = new Set(entries.map(e => e.team)).size;
-  const now = new Date().toLocaleString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', second: '2-digit'
-  });
   
-  let tableRows = '';
+  // Group entries by event_number, event_name, gender, age_group
+  const groups = {};
   for (const entry of entries) {
-    tableRows += '<tr>' +
-      '<td>' + escapeHtml(entry.last_name) + '</td>' +
-      '<td>' + escapeHtml(entry.first_name) + '</td>' +
-      '<td>' + entry.age + '</td>' +
-      '<td>' + escapeHtml(entry.gender) + '</td>' +
-      '<td>' + escapeHtml(entry.team) + '</td>' +
-      '<td>#' + entry.event_number + '</td>' +
-      '<td>' + escapeHtml(entry.event_name) + '</td>' +
-      '<td>' + escapeHtml(entry.entry_time) + '</td>' +
-      '<td>' + formatSubmittedAt(entry.submitted_at) + '</td>' +
-      '</tr>';
+    const key = entry.event_number + '|' + entry.gender + '|' + entry.age_group + '|' + entry.event_name;
+    if (!groups[key]) {
+      groups[key] = { event_number: entry.event_number, gender: entry.gender, age_group: entry.age_group, event_name: entry.event_name, entries: [] };
+    }
+    groups[key].entries.push(entry);
+  }
+  
+  let groupsHtml = '';
+  for (const key of Object.keys(groups).sort()) {
+    const group = groups[key];
+    const genderLabel = group.gender === 'M' ? 'Male' : group.gender === 'F' ? 'Female' : 'Mixed';
+    groupsHtml += '<div class="event-group" style="margin-bottom: 32px;">' +
+      '<h2 style="margin: 0 0 12px 0; font-size: 16px; color: #0077b6;">#' + group.event_number + ' ' + genderLabel + ' ' + group.age_group + ' ' + escapeHtml(group.event_name) + '</h2>' +
+      '<table style="width: 100%; border-collapse: collapse;">' +
+      '<thead><tr>' +
+      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase;">Last</th>' +
+      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase;">First</th>' +
+      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase;">Time</th>' +
+      '</tr></thead><tbody>';
+    
+    for (const entry of group.entries) {
+      groupsHtml += '<tr>' +
+        '<td style="border: 1px solid #ddd; padding: 10px; font-size: 14px;">' + escapeHtml(entry.last_name) + '</td>' +
+        '<td style="border: 1px solid #ddd; padding: 10px; font-size: 14px;">' + escapeHtml(entry.first_name) + '</td>' +
+        '<td style="border: 1px solid #ddd; padding: 10px; font-size: 14px;">' + escapeHtml(entry.entry_time) + '</td>' +
+        '</tr>';
+    }
+    
+    groupsHtml += '</tbody></table></div>';
   }
   
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escapeHtml(meet.name) + ' - Entries</title>' +
@@ -1371,28 +1384,16 @@ function printEntries() {
     '.header { margin-bottom: 24px; border-bottom: 3px solid #0077b6; padding-bottom: 12px; }' +
     '.header h1 { margin: 0 0 4px 0; font-size: 24px; color: #0077b6; }' +
     '.header p { margin: 2px 0; font-size: 13px; color: #666; }' +
-    '.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }' +
-    '.stat { border: 1px solid #ddd; padding: 16px; text-align: center; }' +
-    '.stat-value { font-size: 32px; font-weight: bold; color: #0077b6; }' +
-    '.stat-label { font-size: 11px; color: #666; text-transform: uppercase; margin-top: 8px; }' +
-    'table { width: 100%; border-collapse: collapse; margin-top: 20px; }' +
+    '.event-group h2 { margin: 0 0 12px 0; font-size: 16px; color: #0077b6; }' +
+    'table { border-collapse: collapse; }' +
     'th { background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase; }' +
     'td { border: 1px solid #ddd; padding: 10px; font-size: 14px; }' +
-    'tr:nth-child(even) { background: #f9f9f9; }' +
     '</style></head><body>' +
     '<div class="header">' +
     '<h1>' + escapeHtml(meet.name) + '</h1>' +
     '<p><strong>Date:</strong> ' + meet.date + ' · <strong>Course:</strong> ' + meet.course + '</p>' +
-    '<p><strong>Printed:</strong> ' + now + '</p>' +
     '</div>' +
-    '<div class="stats">' +
-    '<div class="stat"><div class="stat-value">' + athletes + '</div><div class="stat-label">Athletes</div></div>' +
-    '<div class="stat"><div class="stat-value">' + entries.length + '</div><div class="stat-label">Entries</div></div>' +
-    '<div class="stat"><div class="stat-value">' + teams + '</div><div class="stat-label">Teams</div></div>' +
-    '</div>' +
-    '<table><thead><tr>' +
-    '<th>Last</th><th>First</th><th>Age</th><th>G</th><th>Team</th><th>#</th><th>Event</th><th>Time</th><th>Submitted</th>' +
-    '</tr></thead><tbody>' + tableRows + '</tbody></table>' +
+    groupsHtml +
     '</body></html>';
   
   const printWindow = window.open('', '', 'height=600,width=1000');
