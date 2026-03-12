@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meet Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy:   #0b1f3a;
+      --pool:   #0077b6;
+      --lane:   #00b4d8;
+      --white:  #f0f4f8;
+      --silver: #c8d6e5;
+      --mid:    #4a6580;
+      --card:   #122940;
+      --input:  #0d2238;
+      --accent: #f0a500;
+      --green:  #00c48c;
+      --red:    #e84545;
+      --radius: 6px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--navy);
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── login overlay ── */
+    #login-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: var(--navy);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: var(--card);
+      border: 1px solid rgba(0,180,216,0.2);
+      border-radius: 10px;
+      padding: 40px;
+      width: 340px;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
+    .login-box .logo {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 8px;
+    }
+    .login-box h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px; font-weight: 800;
+      margin-bottom: 24px;
+    }
+    .login-box input {
+      width: 100%; background: var(--input);
+      border: 1px solid rgba(0,180,216,0.25);
+      border-radius: var(--radius);
+      color: var(--white); font-family: 'Barlow', sans-serif;
+      font-size: 15px; padding: 11px 14px;
+      margin-bottom: 14px; text-align: center; letter-spacing: 2px;
+    }
+    .login-box input:focus { outline: none; border-color: var(--lane); }
+    .login-box button {
+      width: 100%; padding: 12px;
+      background: var(--pool); border: none;
+      border-radius: var(--radius); color: var(--white);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-box button:hover { background: var(--lane); }
+    .login-error { color: var(--red); font-size: 13px; margin-top: 10px; }
+
+    /* ── shell ── */
+    #shell { display: none; flex-direction: column; min-height: 100vh; }
+
+    /* top bar */
+    .topbar {
+      background: linear-gradient(135deg, #0d2a4a 0%, #0077b6 100%);
+      border-bottom: 3px solid var(--accent);
+      padding: 16px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-left { display: flex; flex-direction: column; gap: 2px; }
+    .topbar-eyebrow {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--accent);
+    }
+    .topbar-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 26px; font-weight: 800; line-height: 1;
+    }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: var(--radius);
+      color: var(--silver); font-family: 'Barlow', sans-serif;
+      font-size: 13px; font-weight: 600;
+      padding: 7px 14px; cursor: pointer; transition: all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+
+    /* tab nav */
+    .tab-nav {
+      display: flex;
+      border-bottom: 2px solid rgba(0,180,216,0.15);
+      padding: 0 28px;
+      background: var(--card);
+    }
+    .tab-btn {
+      padding: 14px 20px;
+      background: none; border: none;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 14px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--mid); cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px; transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--silver); }
+    .tab-btn.active { color: var(--lane); border-bottom-color: var(--lane); }
+
+    /* content area */
+    .tab-content { display: none; padding: 28px; flex: 1; }
+    .tab-content.active { display: block; }
+
+    /* ── cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(0,180,216,0.15);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--lane); 
+    }
+
+    /* ── form fields ── */
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label.fl {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--silver);
+    }
+    input[type="text"], input[type="date"], input[type="number"],
+    select, textarea {
+      background: var(--input);
+      border: 1px solid rgba(0,180,216,0.2);
+      border-radius: var(--radius);
+      color: var(--white); font-family: 'Barlow', sans-serif;
+      font-size: 14px; padding: 9px 12px;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--lane);
+    }
+    select option { background: var(--input); }
+
+    /* ── buttons ── */
+    .btn {
+      padding: 9px 18px;
+      border: none; border-radius: var(--radius);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--pool); color: var(--white); }
+    .btn-primary:hover { background: var(--lane); }
+    .btn-accent  { background: var(--accent); color: #1a1a1a; }
+    .btn-accent:hover { filter: brightness(1.1); }
+    .btn-danger  { background: transparent; color: var(--red); border: 1px solid var(--red); }
+    .btn-danger:hover { background: rgba(232,69,69,0.12); }
+    .btn-ghost   { background: transparent; color: var(--silver); border: 1px solid rgba(255,255,255,0.15); }
+    .btn-ghost:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-sm { padding: 9px 12px; font-size: 11px; }
+
+    /* ── meets list ── */
+    .meet-list { display: flex; flex-direction: column; gap: 10px; }
+    .meet-item {
+      background: var(--input);
+      border: 1px solid rgba(0,180,216,0.1);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .meet-item.active-meet { border-color: var(--green); }
+    .active-pip {
+      width: 10px; height: 10px;
+      border-radius: 50%; background: var(--mid);
+      flex-shrink: 0;
+    }
+    .meet-item.active-meet .active-pip { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .meet-info { flex: 1; }
+    .meet-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 17px; font-weight: 700;
+    }
+    .meet-meta { font-size: 12px; color: var(--mid); margin-top: 2px; }
+    .meet-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* ── events editor (textarea-based for simplicity) ── */
+    .events-editor-wrap { margin-top: 14px; }
+    .events-editor-wrap textarea {
+      font-family: 'Barlow Semi Condensed', monospace;
+      font-size: 13px; line-height: 1.7;
+      min-height: 180px; resize: vertical;
+    }
+    .teams-editor {
+      min-height: 120px;
+      resize: vertical;
+      font-family: 'Barlow Semi Condensed', monospace;
+      line-height: 1.6;
+    }
+    .events-hint {
+      font-size: 11px; color: var(--mid);
+      margin-top: 6px; line-height: 1.6;
+    }
+
+    /* ── entries table ── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--mid); text-align: left;
+      padding: 10px 12px; border-bottom: 1px solid rgba(0,180,216,0.15);
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--silver);
+    }
+    tr:hover td { background: rgba(0,119,182,0.08); color: var(--white); }
+    td.mono {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 15px; font-weight: 600;
+      color: var(--white); letter-spacing: 0.5px;
+    }
+
+    /* ── filters ── */
+    .filter-bar {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 12px; align-items: flex-end;
+    }
+    .filter-bar input, .filter-bar select {
+      max-width: 180px; font-size: 13px; padding: 7px 10px;
+    }
+
+    /* ── stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .stat-box {
+      background: var(--input);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .stat-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 32px; font-weight: 800;
+      line-height: 1; color: var(--lane);
+    }
+    .stat-label {
+      font-size: 11px; color: var(--mid);
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* ── export buttons (inline in filter bar) ── */
+    .export-btns {
+      display: none; gap: 8px; align-items: center;
+    }
+    .export-btns.visible { display: flex; }
+
+    /* ── toast ── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 200;
+      background: var(--card);
+      border: 1px solid rgba(0,180,216,0.3);
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      font-size: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.25s;
+      pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: var(--green); color: var(--green); }
+    #toast.error   { border-color: var(--red);   color: var(--red); }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Overlay ─────────────────────────────── -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="logo">Swim Meet Signup</div>
+    <h2>Admin Access</h2>
+    <input type="password" id="key-input" placeholder="Enter admin key"
+      onkeydown="if(event.key==='Enter') doLogin()" />
+    <button onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ── Admin Shell ────────────────────────────────── -->
+<div id="shell">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-eyebrow">Administrator</span>
+      <span class="topbar-title">Meet Dashboard</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('meets')">Meets</button>
+    <button class="tab-btn" onclick="switchTab('entries')">Entries</button>
+  </div>
+
+  <!-- ── MEETS TAB ── -->
+  <div class="tab-content active" id="tab-meets">
+
+    <!-- Create new meet -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Create New Meet</span>
+      </div>
+      <div class="field-row">
+        <div class="field" style="grid-column: span 2">
+          <label class="fl">Meet Name</label>
+          <input type="text" id="new-name" placeholder="Spring Invitational 2025" />
+        </div>
+        <div class="field">
+          <label class="fl">Date</label>
+          <input type="date" id="new-date" />
+        </div>
+        <div class="field">
+          <label class="fl">Sign-up Deadline</label>
+          <input type="date" id="new-deadline" />
+        </div>
+        <div class="field">
+          <label class="fl">Course</label>
+          <select id="new-course">
+            <option value="SCY">SCY</option>
+            <option value="LCM">LCM</option>
+            <option value="SCM">SCM</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--silver);letter-spacing:0;text-transform:none;margin-top:30px;">
+            <input type="checkbox" id="new-active" style="width:16px;height:16px;accent-color:var(--pool);" />
+            Set as active meet
+          </label>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label class="fl">Teams</label>
+        <textarea id="new-teams" class="teams-editor" placeholder="Enter one team per line"></textarea>
+        <div class="events-hint">These team names will appear as the signup dropdown options.</div>
+      </div>
+
+      <div class="events-editor-wrap">
+        <label class="fl">Events</label>
+        <div style="overflow-x:auto;">
+          <table id="events-table" style="width:100%;margin-bottom:8px;background:var(--input);border-radius:var(--radius);">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Distance</th>
+                <th>Stroke</th>
+                <th>Gender</th>
+                <th>Age Group</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="events-tbody">
+            </tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addEventRow()">+ Add Event</button>
+        <div class="events-hint">
+          Fill in each event. Gender supports Male, Female, or Mixed. Age group can be bracketed or Open.
+        </div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="createMeet()">Create Meet</button>
+        <button class="btn btn-ghost" onclick="loadSampleEvents()">Load Sample Events</button>
+      </div>
+    </div>
+
+    <!-- Existing meets -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">All Meets</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadMeets()">↻ Refresh</button>
+      </div>
+      <div class="meet-list" id="meet-list">
+        <div style="color:var(--mid);font-size:14px;">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ENTRIES TAB ── -->
+  <div class="tab-content" id="tab-entries">
+
+    <div class="stats-row" id="stats-row" style="display:none">
+      <div class="stat-box">
+        <div class="stat-val" id="stat-athletes">—</div>
+        <div class="stat-label">Athletes</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-entries">—</div>
+        <div class="stat-label">Entries</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-teams">—</div>
+        <div class="stat-label">Teams</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Entries</span>
+      </div>
+
+      <!-- meet selector -->
+      <div class="filter-bar">
+        <div class="field" style="flex:0 0 220px">
+          <label class="fl">Meet</label>
+          <select id="entries-meet-select" onchange="loadEntries()">
+            <option value="">— Select meet —</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1;min-width:160px">
+          <label class="fl">Search</label>
+          <input type="text" id="search-input" placeholder="Name or team…" oninput="filterTable()" />
+        </div>
+        <div class="export-btns" id="export-bar">
+          <button class="btn btn-accent btn-sm" onclick="exportFile('csv')">⬇ CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="exportFile('hy3')">⬇ Hy-Tek .hy3</button>
+        </div>
+        <div class="field" style="flex:0 0 160px">
+          <label class="fl">Sort By</label>
+          <select id="sort-by" onchange="filterTable()">
+            <option value="event">Event</option>
+            <option value="name">Name</option>
+            <option value="age">Age</option>
+            <option value="gender">Gender</option>
+            <option value="team">Team</option>
+            <option value="submitted">Date Submitted</option>
+          </select>
+        </div>
+        
+      </div>
+
+      <div class="table-wrap">
+        <table id="entries-table">
+          <thead>
+            <tr>
+              <th>Last</th><th>First</th>
+              <th>Age</th><th>G</th><th>Team</th>
+              <th>#</th><th>Event</th><th>Time</th><th>Submitted</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="entries-tbody">
+            <tr><td colspan="10" style="color:var(--mid);text-align:center;padding:32px">
+              Select a meet to view entries.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────
+const API_BASE = 'http://localhost:8000';
+
+// ─────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────
+let adminKey    = '';
+let allMeets    = [];
+let allEntries  = [];
+let currentMeetId = null;
+let editingEntryId = null;
+
+// ─────────────────────────────────────────────────────────────
+// Auth
+// ─────────────────────────────────────────────────────────────
+function doLogin() {
+  const key = document.getElementById('key-input').value.trim();
+  if (!key) return;
+  adminKey = key;
+  // Verify by hitting a protected endpoint
+  apiFetch('/admin/meets').then(() => {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('shell').style.display = 'flex';
+    loadMeets();
+  }).catch(() => {
+    document.getElementById('login-error').textContent = 'Incorrect key.';
+    adminKey = '';
+  });
+}
+
+function logout() {
+  adminKey = '';
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('shell').style.display = 'none';
+  document.getElementById('key-input').value = '';
+}
+
+// ─────────────────────────────────────────────────────────────
+// API helper
+// ─────────────────────────────────────────────────────────────
+async function apiFetch(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    ...options,
+    headers: {
+      'X-Admin-Key': adminKey,
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tabs
+// ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab-btn[onclick*="${name}"]`).classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if (name === 'entries') populateMeetSelect();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Meets tab
+// ─────────────────────────────────────────────────────────────
+async function loadMeets() {
+  try {
+    allMeets = await apiFetch('/admin/meets');
+    renderMeetList();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderMeetList() {
+  const el = document.getElementById('meet-list');
+  if (!allMeets.length) {
+    el.innerHTML = '<div style="color:var(--mid);font-size:14px;">No meets yet. Create one above.</div>';
+    return;
+  }
+  el.innerHTML = allMeets.map(m => `
+    <div class="meet-item ${m.is_active ? 'active-meet' : ''}">
+      <div class="active-pip" title="${m.is_active ? 'Active' : 'Inactive'}"></div>
+      <div class="meet-info">
+        <div class="meet-name">${m.name}</div>
+        <div class="meet-meta">${m.date} · ${m.course} · Deadline: ${m.deadline || '—'} · ${m.event_count} events · ${m.entry_count} entries</div>
+      </div>
+      <div class="meet-actions">
+        ${m.is_active ? `<button class="btn btn-ghost btn-sm" onclick="deactivateMeet(${m.id})">Deactivate</button>` : `<button class="btn btn-ghost btn-sm" onclick="setActive(${m.id})">Set Active</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="copyMeet(${m.id})">Copy</button>
+        <button class="btn btn-primary btn-sm" onclick="editMeet(${m.id})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteMeet(${m.id}, '${m.name.replace(/'/g,'')}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createMeet() {
+
+  const name     = document.getElementById('new-name').value.trim();
+  const date     = document.getElementById('new-date').value;
+  const deadline = document.getElementById('new-deadline').value;
+  const course   = document.getElementById('new-course').value;
+  const team_names = getTeamsFromInput();
+  const active   = document.getElementById('new-active').checked;
+  const events   = getEventsFromTable();
+
+  if (!name || !date) { toast('Name and date are required.', 'error'); return; }
+  if (!events.length) { toast('Add at least one event.', 'error'); return; }
+
+  try {
+    await apiFetch('/admin/meets', {
+      method: 'POST',
+      body: JSON.stringify({ name, date, deadline, course, team_names, is_active: active, events }),
+    });
+    toast('Meet created!', 'success');
+    resetMeetForm();
+    loadMeets();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Deactivate Meet ──
+async function deactivateMeet(id) {
+  try {
+    await apiFetch(`/admin/meets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_active: false }),
+    });
+    toast('Meet deactivated.', 'success');
+    loadMeets();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Copy Meet ──
+function copyMeet(id) {
+  const meet = allMeets.find(m => m.id === id);
+  if (!meet) return toast('Meet not found.', 'error');
+  // Fill form fields (leave date/deadline blank so admin sets new ones)
+  document.getElementById('new-name').value = meet.name + ' (Copy)';
+  document.getElementById('new-date').value = '';
+  document.getElementById('new-deadline').value = '';
+  document.getElementById('new-course').value = meet.course;
+  document.getElementById('new-teams').value = (meet.team_names || []).join('\n');
+  document.getElementById('new-active').checked = false;
+  clearEventsTable();
+  if (meet.events && meet.events.length) {
+    for (const ev of meet.events) addEventRow(ev);
+  } else {
+    addEventRow();
+  }
+  // Ensure the button stays as Create Meet
+  const createBtn = document.querySelector('button.btn-primary[onclick="createMeet()"]') ||
+    document.querySelector('button.btn-primary');
+  createBtn.textContent = 'Create Meet';
+  createBtn.onclick = createMeet;
+  document.getElementById('new-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Edit Meet ──
+function editMeet(id) {
+  const meet = allMeets.find(m => m.id === id);
+  if (!meet) return toast('Meet not found.', 'error');
+  // Fill form fields
+  document.getElementById('new-name').value = meet.name;
+  document.getElementById('new-date').value = meet.date;
+  document.getElementById('new-deadline').value = meet.deadline || '';
+  document.getElementById('new-course').value = meet.course;
+  document.getElementById('new-teams').value = (meet.team_names || []).join('\n');
+  document.getElementById('new-active').checked = !!meet.is_active;
+  clearEventsTable();
+  if (meet.events && meet.events.length) {
+    for (const ev of meet.events) addEventRow(ev);
+  } else {
+    addEventRow();
+  }
+  // Change create button to update
+  const createBtn = document.querySelector('button.btn-primary[onclick="createMeet()"]');
+  createBtn.textContent = 'Update Meet';
+  createBtn.onclick = function() { updateMeet(id); };
+}
+
+async function updateMeet(id) {
+  const name     = document.getElementById('new-name').value.trim();
+  const date     = document.getElementById('new-date').value;
+  const deadline = document.getElementById('new-deadline').value;
+  const course   = document.getElementById('new-course').value;
+  const team_names = getTeamsFromInput();
+  const active   = document.getElementById('new-active').checked;
+  const events   = getEventsFromTable();
+  if (!name || !date) { toast('Name and date are required.', 'error'); return; }
+  if (!events.length) { toast('Add at least one event.', 'error'); return; }
+
+  // ── Check for entries on events being modified or removed ──
+  try {
+    const meet = allMeets.find(m => m.id === id);
+    if (meet && meet.entry_count > 0) {
+      const entries = await apiFetch(`/admin/entries?meet_id=${id}`);
+      if (entries.length > 0) {
+        const currentByNum = Object.fromEntries((meet.events || []).map(e => [e.event_number, e]));
+        const newByNum     = Object.fromEntries(events.map(e => [e.event_number, e]));
+        const entriesByNum = {};
+        for (const entry of entries) {
+          entriesByNum[entry.event_number] = (entriesByNum[entry.event_number] || 0) + 1;
+        }
+
+        const warnings = [];
+        for (const [num, cur] of Object.entries(currentByNum)) {
+          const count = entriesByNum[num];
+          if (!count) continue;
+          const evNum = parseInt(num);
+          if (!(evNum in newByNum)) {
+            warnings.push(`Event #${num} (${cur.distance} ${cur.stroke}) — REMOVED — ${count} entr${count === 1 ? 'y' : 'ies'} will be deleted`);
+          } else {
+            const nw = newByNum[evNum];
+            if (nw.distance !== cur.distance || nw.stroke !== cur.stroke ||
+                nw.gender !== cur.gender || nw.age_group !== cur.age_group) {
+              warnings.push(`Event #${num} (${cur.distance} ${cur.stroke} → ${nw.distance} ${nw.stroke}) — ${count} entr${count === 1 ? 'y' : 'ies'} affected`);
+            }
+          }
+        }
+
+        if (warnings.length > 0) {
+          const msg = `The following events have existing entries that will be affected:\n\n${warnings.join('\n')}\n\nProceed with update?`;
+          if (!confirm(msg)) return;
+        }
+      }
+    }
+  } catch(e) {
+    // Non-fatal: if check fails, still allow admin to proceed
+    console.warn('Entry check failed:', e.message);
+  }
+
+  try {
+    await apiFetch(`/admin/meets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, date, deadline, course, team_names, is_active: active, events }),
+    });
+    toast('Meet updated!', 'success');
+    resetMeetForm();
+    loadMeets();
+    // Restore create button
+    const createBtn = document.querySelector('button.btn-primary');
+    createBtn.textContent = 'Create Meet';
+    createBtn.onclick = createMeet;
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+
+// ── Event Table Logic ──
+function addEventRow(data = {}) {
+  const tbody = document.getElementById('events-tbody');
+  // Auto-fill event number: last row + 1, or 1 if first row
+  let eventNumber = data.event_number;
+  if (eventNumber === undefined) {
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length > 0) {
+      const lastVal = parseInt(rows[rows.length-1].querySelector('input[type="number"]').value);
+      eventNumber = isNaN(lastVal) ? rows.length+1 : lastVal+1;
+    } else {
+      eventNumber = 1;
+    }
+  }
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td><input type="number" min="1" style="width:60px" value="${eventNumber}" /></td>
+    <td><input type="number" min="25" step="25" style="width:70px" value="${data.distance || ''}" /></td>
+    <td>
+      <select style="width:180px">
+        <option value="Freestyle" ${data.stroke==='Freestyle'?'selected':''}>Freestyle</option>
+        <option value="Backstroke" ${data.stroke==='Backstroke'?'selected':''}>Backstroke</option>
+        <option value="Breaststroke" ${data.stroke==='Breaststroke'?'selected':''}>Breaststroke</option>
+        <option value="Butterfly" ${data.stroke==='Butterfly'?'selected':''}>Butterfly</option>
+        <option value="Individual Medley" ${data.stroke==='Individual Medley'?'selected':''}>Individual Medley</option>
+        <option value="Medley Relay" ${data.stroke==='Medley Relay'?'selected':''}>Medley Relay</option>
+        <option value="Freestyle Relay" ${data.stroke==='Freestyle Relay'?'selected':''}>Freestyle Relay</option>
+      </select>
+    </td>
+    <td>
+      <select style="width:60px">
+        <option value="M" ${data.gender==='M'?'selected':''}>M</option>
+        <option value="F" ${data.gender==='F'?'selected':''}>F</option>
+        <option value="X" ${(data.gender==='X' || data.gender==='Mixed' || data.gender==='Open')?'selected':''}>X</option>
+      </select>
+    </td>
+    <td>
+      <select style="width:120px">
+        <option value="Open" ${(data.age_group==='Open' || data.age_group==='open')?'selected':''}>Open</option>
+        <option value="8 & under" ${data.age_group==='8 & under'?'selected':''}>8 & under</option>
+        <option value="9-10" ${data.age_group==='9-10'?'selected':''}>9-10</option>
+        <option value="11-12" ${data.age_group==='11-12'?'selected':''}>11-12</option>
+        <option value="13-14" ${data.age_group==='13-14'?'selected':''}>13-14</option>
+        <option value="15-16" ${data.age_group==='15-16'?'selected':''}>15-16</option>
+        <option value="17-18" ${data.age_group==='17-18'?'selected':''}>17-18</option>
+      </select>
+    </td>
+    <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>
+  `;
+  tbody.appendChild(row);
+}
+
+function getEventsFromTable() {
+  const rows = document.querySelectorAll('#events-tbody tr');
+  const events = [];
+  for (const row of rows) {
+    const cells = row.querySelectorAll('input,select');
+    const event_number = parseInt(cells[0].value);
+    const distance     = parseInt(cells[1].value);
+    const stroke       = cells[2].value;
+    const gender       = cells[3].value.trim().toUpperCase();
+    const age_group    = cells[4].value.trim();
+    if (!event_number || !distance || !stroke || !gender || !age_group) continue;
+    events.push({ event_number, distance, stroke, gender, age_group });
+  }
+  return events;
+}
+
+function clearEventsTable() {
+  document.getElementById('events-tbody').innerHTML = '';
+}
+
+function getTeamsFromInput() {
+  const value = document.getElementById('new-teams').value;
+  const seen = new Set();
+  return value
+    .split(/\r?\n/)
+    .map(name => name.trim())
+    .filter(name => {
+      if (!name) return false;
+      const key = name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function resetMeetForm() {
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-date').value = '';
+  document.getElementById('new-deadline').value = '';
+  document.getElementById('new-course').value = 'SCY';
+  document.getElementById('new-teams').value = '';
+  document.getElementById('new-active').checked = false;
+  clearEventsTable();
+  addEventRow();
+}
+
+async function setActive(id) {
+  try {
+    await apiFetch(`/admin/meets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_active: true }),
+    });
+    toast('Meet set as active.', 'success');
+    loadMeets();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteMeet(id, name) {
+  if (!confirm(`Delete "${name}" and all its entries? This cannot be undone.`)) return;
+  try {
+    await apiFetch(`/admin/meets/${id}`, { method: 'DELETE' });
+    toast('Meet deleted.', 'success');
+    loadMeets();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function loadSampleEvents() {
+  clearEventsTable();
+  const sample = [
+    {event_number:1, distance:200, stroke:'Medley Relay', gender:'M', age_group:'Open'},
+    {event_number:2, distance:200, stroke:'Medley Relay', gender:'F', age_group:'Open'},
+    {event_number:3, distance:200, stroke:'Freestyle', gender:'M', age_group:'Open'},
+    {event_number:4, distance:200, stroke:'Freestyle', gender:'F', age_group:'Open'},
+    {event_number:5, distance:100, stroke:'Backstroke', gender:'M', age_group:'Open'},
+    {event_number:6, distance:100, stroke:'Backstroke', gender:'F', age_group:'Open'},
+    {event_number:7, distance:100, stroke:'Breaststroke', gender:'M', age_group:'Open'},
+    {event_number:8, distance:100, stroke:'Breaststroke', gender:'F', age_group:'Open'},
+    {event_number:9, distance:200, stroke:'Butterfly', gender:'M', age_group:'Open'},
+    {event_number:10, distance:200, stroke:'Butterfly', gender:'F', age_group:'Open'},
+    {event_number:11, distance:400, stroke:'Individual Medley', gender:'M', age_group:'Open'},
+    {event_number:12, distance:400, stroke:'Individual Medley', gender:'F', age_group:'Open'},
+    {event_number:13, distance:200, stroke:'Freestyle Relay', gender:'M', age_group:'Open'},
+    {event_number:14, distance:200, stroke:'Freestyle Relay', gender:'F', age_group:'Open'},
+    {event_number:15, distance:50, stroke:'Freestyle', gender:'M', age_group:'Open'},
+    {event_number:16, distance:50, stroke:'Freestyle', gender:'F', age_group:'Open'},
+    {event_number:17, distance:100, stroke:'Butterfly', gender:'M', age_group:'Open'},
+    {event_number:18, distance:100, stroke:'Butterfly', gender:'F', age_group:'Open'},
+    {event_number:19, distance:100, stroke:'Freestyle', gender:'M', age_group:'Open'},
+    {event_number:20, distance:100, stroke:'Freestyle', gender:'F', age_group:'Open'},
+  ];
+  for (const ev of sample) addEventRow(ev);
+}
+
+// Add one empty row by default on page load
+window.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('events-tbody')) addEventRow();
+});
+
+// ─────────────────────────────────────────────────────────────
+// Entries tab
+// ─────────────────────────────────────────────────────────────
+function populateMeetSelect() {
+  const sel = document.getElementById('entries-meet-select');
+  sel.innerHTML = '<option value="">— Select meet —</option>' +
+    allMeets.map(m => `<option value="${m.id}" ${m.is_active ? 'selected' : ''}>${m.name} (${m.date})</option>`).join('');
+  if (allMeets.some(m => m.is_active)) loadEntries();
+}
+
+async function loadEntries() {
+  const meetId = document.getElementById('entries-meet-select').value;
+  if (!meetId) return;
+  currentMeetId = +meetId;
+  editingEntryId = null;
+
+  try {
+    allEntries = await apiFetch(`/admin/entries?meet_id=${meetId}`);
+    renderStats();
+    renderCurrentTable();
+    document.getElementById('export-bar').classList.add('visible');
+    document.getElementById('stats-row').style.display   = 'grid';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderStats() {
+  const athletes = new Set(allEntries.map(e => `${e.last_name}|${e.first_name}|${e.team}`)).size;
+  const teams    = new Set(allEntries.map(e => e.team)).size;
+  document.getElementById('stat-athletes').textContent = athletes;
+  document.getElementById('stat-entries').textContent  = allEntries.length;
+  document.getElementById('stat-teams').textContent    = teams;
+}
+
+function filterTable() {
+  renderCurrentTable();
+}
+
+function getFilteredEntries() {
+  const q      = document.getElementById('search-input').value.toLowerCase();
+  const sortBy = document.getElementById('sort-by').value;
+  const filtered = allEntries.filter(e => {
+    return !q || [e.last_name, e.first_name, e.team].join(' ').toLowerCase().includes(q);
+  });
+  return filtered.slice().sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name);
+      case 'age':
+        return a.age - b.age;
+      case 'gender':
+        return a.gender.localeCompare(b.gender);
+      case 'team':
+        return a.team.localeCompare(b.team);
+      case 'submitted': {
+        const toUtc = v => new Date(/Z|[+-]\d{2}:\d{2}$/.test(v || '') ? v : (v || '') + 'Z');
+        return toUtc(a.submitted_at) - toUtc(b.submitted_at);
+      }
+      case 'event':
+      default:
+        return a.event_number - b.event_number;
+    }
+  });
+}
+
+function renderCurrentTable() {
+  renderTable(getFilteredEntries());
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('entries-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--mid);text-align:center;padding:32px">No entries found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(renderEntryRow).join('');
+}
+
+function renderEntryRow(entry) {
+  const isEditing = editingEntryId === entry.id;
+  const teamOptions = getEntryTeamOptions(entry);
+  const genderOptions = ['M', 'F'];
+
+  if (!isEditing) {
+    return `
+    <tr>
+      <td>${escapeHtml(entry.last_name)}</td>
+      <td>${escapeHtml(entry.first_name)}</td>
+      <td>${entry.age}</td>
+      <td>${escapeHtml(entry.gender)}</td>
+      <td>${escapeHtml(entry.team)}</td>
+      <td style="color:var(--mid)">#${entry.event_number}</td>
+      <td>${escapeHtml(entry.event_name)}</td>
+      <td class="mono">${escapeHtml(entry.entry_time)}</td>
+      <td>${formatSubmittedAt(entry.submitted_at)}</td>
+      <td>
+        <div class="meet-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editEntry(${entry.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEntry(${entry.id})">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  return `
+    <tr>
+      <td><input type="text" id="edit-last-${entry.id}" value="${escapeHtml(entry.last_name)}" /></td>
+      <td><input type="text" id="edit-first-${entry.id}" value="${escapeHtml(entry.first_name)}" /></td>
+      <td><input type="number" id="edit-age-${entry.id}" min="5" max="99" value="${entry.age}" /></td>
+      <td>
+        <select id="edit-gender-${entry.id}">
+          ${genderOptions.map(option => `<option value="${option}" ${entry.gender === option ? 'selected' : ''}>${option}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <select id="edit-team-${entry.id}">
+          ${teamOptions.map(team => `<option value="${escapeHtml(team)}" ${entry.team === team ? 'selected' : ''}>${escapeHtml(team)}</option>`).join('')}
+        </select>
+      </td>
+      <td style="color:var(--mid)">#${entry.event_number}</td>
+      <td>${escapeHtml(entry.event_name)}</td>
+      <td><input type="text" id="edit-time-${entry.id}" value="${escapeHtml(entry.entry_time)}" /></td>
+      <td>${formatSubmittedAt(entry.submitted_at)}</td>
+      <td>
+        <div class="meet-actions">
+          <button class="btn btn-primary btn-sm" onclick="saveEntry(${entry.id})">Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="cancelEditEntry()">Cancel</button>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function getCurrentMeet() {
+  return allMeets.find(meet => meet.id === currentMeetId) || null;
+}
+
+function getEntryTeamOptions(entry) {
+  const meet = getCurrentMeet();
+  const teams = Array.isArray(meet?.team_names) ? [...meet.team_names] : [];
+  if (entry && entry.team && !teams.includes(entry.team)) {
+    teams.unshift(entry.team);
+  }
+  return teams.length ? teams : [entry.team || ''];
+}
+
+function editEntry(id) {
+  const entry = allEntries.find(item => item.id === id);
+  if (!entry) {
+    toast('Entry not found.', 'error');
+    return;
+  }
+
+  editingEntryId = id;
+  renderCurrentTable();
+}
+
+function cancelEditEntry() {
+  editingEntryId = null;
+  renderCurrentTable();
+}
+
+async function saveEntry(id) {
+  const entry = allEntries.find(item => item.id === id);
+  if (!entry) {
+    toast('Entry not found.', 'error');
+    return;
+  }
+
+  const last_name = document.getElementById(`edit-last-${id}`)?.value.trim() || '';
+  const first_name = document.getElementById(`edit-first-${id}`)?.value.trim() || '';
+  const ageValue = document.getElementById(`edit-age-${id}`)?.value || '';
+  const gender = document.getElementById(`edit-gender-${id}`)?.value || '';
+  const team = document.getElementById(`edit-team-${id}`)?.value || '';
+  const entry_time = document.getElementById(`edit-time-${id}`)?.value.trim() || 'NT';
+
+  const normalizedGender = gender.trim().toUpperCase();
+  const parsedAge = parseInt(ageValue, 10);
+
+  if (!last_name || !first_name) {
+    toast('First and last name are required.', 'error');
+    return;
+  }
+  if (Number.isNaN(parsedAge) || parsedAge < 5 || parsedAge > 99) {
+    toast('Enter a valid age between 5 and 99.', 'error');
+    return;
+  }
+  if (!['M', 'F'].includes(normalizedGender)) {
+    toast('Gender must be M or F.', 'error');
+    return;
+  }
+  if (!team.trim()) {
+    toast('Team is required.', 'error');
+    return;
+  }
+
+  try {
+    await apiFetch(`/admin/entries/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        last_name,
+        first_name,
+        age: parsedAge,
+        gender: normalizedGender,
+        team: team.trim(),
+        entry_time,
+      }),
+    });
+    editingEntryId = null;
+    toast('Entry updated.', 'success');
+    loadEntries();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function deleteEntry(id) {
+  const entry = allEntries.find(item => item.id === id);
+  if (!entry) {
+    toast('Entry not found.', 'error');
+    return;
+  }
+  if (!confirm(`Delete ${entry.first_name} ${entry.last_name} from #${entry.event_number} ${entry.event_name}?`)) return;
+  try {
+    await apiFetch(`/admin/entries/${id}`, { method: 'DELETE' });
+    toast('Entry deleted.', 'success');
+    loadEntries();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function formatSubmittedAt(value) {
+  if (!value) return '—';
+  // Treat naive datetime strings as UTC by appending 'Z' if no timezone info is present
+  const normalized = /Z|[+-]\d{2}:\d{2}$/.test(value) ? value : value + 'Z';
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'America/Los_Angeles',
+  });
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Export (trigger browser download via authenticated fetch)
+// ─────────────────────────────────────────────────────────────
+async function exportFile(type) {
+  if (!currentMeetId) { toast('Select a meet first.', 'error'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/admin/export/${type}?meet_id=${currentMeetId}`, {
+      headers: { 'X-Admin-Key': adminKey },
+    });
+    if (!res.ok) throw new Error('Export failed.');
+    const blob = await res.blob();
+    const cd   = res.headers.get('Content-Disposition') || '';
+    const name = cd.match(/filename="([^"]+)"/)?.[1] || `entries.${type}`;
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+    toast(`${type.toUpperCase()} downloaded.`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meet Sign-Up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy:   #0b1f3a;
+      --pool:   #0077b6;
+      --lane:   #00b4d8;
+      --white:  #f0f4f8;
+      --silver: #c8d6e5;
+      --mid:    #4a6580;
+      --card:   #122940;
+      --input:  #0d2238;
+      --accent: #f0a500;
+      --green:  #00c48c;
+      --red:    #e84545;
+      --radius: 6px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--navy);
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── lane-line background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 58px,
+        rgba(0,180,216,0.07) 58px,
+        rgba(0,180,216,0.07) 60px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── header ── */
+    header {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #0d2a4a 0%, #0077b6 100%);
+      border-bottom: 3px solid var(--accent);
+      padding: 28px 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    header .meet-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    header h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(26px, 5vw, 42px);
+      font-weight: 800;
+      letter-spacing: 1px;
+      line-height: 1;
+      color: var(--white);
+    }
+    header .meta {
+      font-size: 13px;
+      color: var(--silver);
+      margin-top: 4px;
+    }
+    header .meta span { margin-right: 16px; }
+
+    /* ── main layout ── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    /* ── section card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(0,180,216,0.18);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 20px;
+      animation: slideUp 0.4s ease both;
+    }
+    .card:nth-child(2) { animation-delay: 0.07s; }
+    .card:nth-child(3) { animation-delay: 0.14s; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--lane);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0,180,216,0.2);
+    }
+
+    /* ── form grid ── */
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .field-grid .full { grid-column: 1 / -1; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--silver);
+    }
+    input[type="text"],
+    input[type="number"],
+    select {
+      background: var(--input);
+      border: 1px solid rgba(0,180,216,0.25);
+      border-radius: var(--radius);
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      font-size: 15px;
+      padding: 10px 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+      appearance: none;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--lane);
+      box-shadow: 0 0 0 3px rgba(0,180,216,0.15);
+    }
+    input.error, select.error {
+      border-color: var(--red);
+    }
+    select option { background: var(--input); }
+
+    /* ── gender radio pills ── */
+    .gender-group {
+      display: flex;
+      gap: 10px;
+    }
+    .gender-group input[type="radio"] { display: none; }
+    .gender-group label {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border: 1px solid rgba(0,180,216,0.25);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      transition: all 0.15s;
+      color: var(--silver);
+      background: var(--input);
+    }
+    .gender-group input[type="radio"]:checked + label {
+      background: var(--pool);
+      border-color: var(--lane);
+      color: var(--white);
+    }
+
+    /* ── event list ── */
+    #events-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .event-row {
+      display: grid;
+      grid-template-columns: 36px 1fr 160px;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+      cursor: pointer;
+    }
+    .event-row:hover { background: rgba(0,119,182,0.12); }
+    .event-row.selected {
+      background: rgba(0,119,182,0.2);
+      border-color: rgba(0,180,216,0.35);
+    }
+
+    .event-row input[type="checkbox"] { display: none; }
+
+    .event-check {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--mid);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .event-row.selected .event-check {
+      background: var(--pool);
+      border-color: var(--lane);
+    }
+    .event-check::after {
+      content: '✓';
+      font-size: 13px;
+      color: white;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .event-row.selected .event-check::after { opacity: 1; }
+
+    .event-info { display: flex; flex-direction: column; gap: 2px; }
+    .event-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .event-badge {
+      font-size: 11px;
+      color: var(--mid);
+      letter-spacing: 0.5px;
+    }
+    .event-row.selected .event-badge { color: var(--silver); }
+
+    .time-input-wrap {
+      position: relative;
+    }
+    .time-input-wrap input {
+      text-align: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      padding: 8px 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .event-row.selected .time-input-wrap input {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .time-hint {
+      font-size: 10px;
+      color: var(--mid);
+      text-align: center;
+      margin-top: 2px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .event-row.selected .time-hint { opacity: 1; }
+
+    /* gender/age group header rows */
+    .event-group-header {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 14px 14px 4px;
+    }
+
+    /* ── no meet state ── */
+    .no-meet {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--mid);
+    }
+    .no-meet .icon { font-size: 48px; margin-bottom: 16px; }
+    .no-meet h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--silver);
+      margin-bottom: 8px;
+    }
+
+    /* ── loading skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--input) 25%, rgba(0,119,182,0.15) 50%, var(--input) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+      height: 18px;
+      margin-bottom: 8px;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── submit button ── */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--pool);
+      border: none;
+      border-radius: var(--radius);
+      color: var(--white);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+    .submit-btn:hover:not(:disabled) {
+      background: var(--lane);
+      transform: translateY(-1px);
+    }
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── validation / feedback ── */
+    .field-error {
+      font-size: 11px;
+      color: var(--red);
+      margin-top: 2px;
+    }
+    .form-error {
+      background: rgba(232,69,69,0.12);
+      border: 1px solid rgba(232,69,69,0.4);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #ff8080;
+      margin-bottom: 16px;
+    }
+    .success-screen {
+      text-align: center;
+      padding: 60px 20px;
+      animation: slideUp 0.4s ease both;
+    }
+    .success-screen .check {
+      width: 72px; height: 72px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 24px;
+    }
+    .success-screen h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 32px; font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .success-screen p { color: var(--silver); margin-bottom: 24px; }
+    .success-screen .summary {
+      background: var(--input);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.8;
+      max-width: 360px;
+      margin: 0 auto 28px;
+    }
+    .another-btn {
+      padding: 12px 32px;
+      background: transparent;
+      border: 2px solid var(--pool);
+      border-radius: var(--radius);
+      color: var(--lane);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .another-btn:hover { background: var(--pool); color: var(--white); }
+
+    /* ── responsive ── */
+    @media (max-width: 560px) {
+      .field-grid { grid-template-columns: 1fr; }
+      .field-grid .full { grid-column: 1; }
+      .event-row { grid-template-columns: 28px 1fr; }
+      .time-input-wrap { grid-column: 1 / -1; padding-left: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+<header id="page-header">
+  <div class="meet-label">Swim Meet Registration</div>
+  <h1 id="meet-title">Loading…</h1>
+  <div class="meta">
+    <span id="meet-date"></span>
+    <span id="meet-course"></span>
+    <span id="meet-deadline"></span>
+  </div>
+</header>
+
+<main id="app">
+  <!-- content injected by JS -->
+</main>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIG — swap this for your Railway URL when deployed
+// ─────────────────────────────────────────────────────────────
+const API_BASE = 'http://localhost:8000';
+
+// ─────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────
+let activeMeet   = null;
+let allEvents    = [];
+let selectedEvts = new Set();   // event IDs currently checked
+
+function getTeamOptions() {
+  return Array.isArray(activeMeet?.team_names) ? activeMeet.team_names : [];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────
+async function init() {
+  const app = document.getElementById('app');
+  app.innerHTML = renderSkeleton();
+
+  try {
+    const res  = await fetch(`${API_BASE}/meet/active`);
+    if (!res.ok) throw new Error('no_meet');
+    activeMeet = await res.json();
+    allEvents  = activeMeet.events;
+
+    document.getElementById('meet-title').textContent  = activeMeet.name;
+    document.getElementById('meet-date').textContent   = formatDate(activeMeet.date);
+    document.getElementById('meet-course').textContent = activeMeet.course;
+
+    if (activeMeet.deadline) {
+      const deadlineEl = document.getElementById('meet-deadline');
+      if (deadlineEl) deadlineEl.textContent = 'Deadline: ' + formatDate(activeMeet.deadline);
+    }
+
+    if (isDeadlinePassed(activeMeet.deadline)) {
+      app.innerHTML = `
+        <div class="no-meet">
+          <div class="icon">🔒</div>
+          <h2>Registration Closed</h2>
+          <p>The sign-up deadline for this meet has passed.<br>Contact your coach if you need to make changes.</p>
+        </div>`;
+      return;
+    }
+
+    app.innerHTML = renderForm();
+    bindFormEvents();
+
+  } catch (e) {
+    document.getElementById('meet-title').textContent = 'No Open Meet';
+    app.innerHTML = `
+      <div class="no-meet">
+        <div class="icon">🏊</div>
+        <h2>Registration Closed</h2>
+        <p>There is no meet currently open for sign-up.<br>Check back later or contact your coach.</p>
+      </div>`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Render helpers
+// ─────────────────────────────────────────────────────────────
+function renderSkeleton() {
+  return `<div class="card">
+    ${[1,2,3].map(() => `<div class="skeleton" style="width:${60+Math.random()*35}%"></div>`).join('')}
+  </div>`;
+}
+
+function renderForm() {
+  const teamOptions = getTeamOptions();
+  // Group events by gender + age_group
+  const groups = {};
+  for (const ev of allEvents) {
+    const key = `${ev.gender}|${ev.age_group}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(ev);
+  }
+
+  const genderLabel = g => {
+    const normalized = String(g || '').trim().toUpperCase();
+    if (normalized === 'M') return 'Men / Boys';
+    if (normalized === 'F') return 'Women / Girls';
+    if (normalized === 'X' || normalized === 'MIXED') return 'Mixed';
+    return 'Open';
+  };
+
+  let eventsHtml = '';
+  for (const [key, evs] of Object.entries(groups)) {
+    const [gender, ageGroup] = key.split('|');
+    eventsHtml += `<div class="event-group-header">${genderLabel(gender)} · ${ageGroup}</div>`;
+    for (const ev of evs) {
+      eventsHtml += `
+        <div class="event-row" data-id="${ev.id}" data-gender="${ev.gender}" data-age-group="${ev.age_group}" onclick="toggleEvent(${ev.id})">
+          <input type="checkbox" id="evt-${ev.id}" value="${ev.id}" />
+          <div class="event-check"></div>
+          <div class="event-info">
+            <span class="event-name">#${ev.event_number} &mdash; ${ev.distance} ${ev.stroke}</span>
+          </div>
+          <div class="time-input-wrap">
+            <input type="text" id="time-${ev.id}" placeholder="NT"
+              maxlength="10"
+              onclick="event.stopPropagation()"
+              oninput="formatTimeInput(this)"
+              title="Enter time as M:SS.ss, SS.ss, or NT" />
+            <div class="time-hint">M:SS.ss or NT</div>
+          </div>
+        </div>`;
+    }
+  }
+
+  return `
+    <div id="form-error" class="form-error" style="display:none"></div>
+
+    <div class="card">
+      <div class="card-title">Athlete Information</div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="last-name">Last Name</label>
+          <input type="text" id="last-name" placeholder="Smith" autocomplete="family-name" />
+          <span class="field-error" id="err-last"></span>
+        </div>
+        <div class="field">
+          <label for="first-name">First Name</label>
+          <input type="text" id="first-name" placeholder="Alex" autocomplete="given-name" />
+          <span class="field-error" id="err-first"></span>
+        </div>
+        <div class="field">
+          <label for="age">Age</label>
+          <input type="number" id="age" placeholder="16" min="5" max="99" />
+          <span class="field-error" id="err-age"></span>
+        </div>
+        <div class="field">
+          <label for="team">Team</label>
+          <select id="team" autocomplete="organization" ${teamOptions.length ? '' : 'disabled'}>
+            <option value="">${teamOptions.length ? 'Select a team' : 'No teams configured'}</option>
+            ${teamOptions.map(team => `<option value="${escapeHtml(team)}">${escapeHtml(team)}</option>`).join('')}
+          </select>
+          <span class="field-error" id="err-team"></span>
+        </div>
+        <div class="field full">
+          <label>Gender</label>
+          <div class="gender-group">
+            <input type="radio" name="gender" id="g-m" value="M" />
+            <label for="g-m">Male</label>
+            <input type="radio" name="gender" id="g-f" value="F" />
+            <label for="g-f">Female</label>
+          </div>
+          <span class="field-error" id="err-gender"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Select Events &amp; Entry Times</div>
+      <div id="events-container">${eventsHtml}</div>
+      <div id="no-events-msg" style="display:none;text-align:center;padding:24px 0;color:var(--mid);font-size:14px;">No events match your age and gender.</div>
+      <span class="field-error" id="err-events" style="display:block;margin-top:10px"></span>
+    </div>
+
+    <div class="card" style="padding:20px 28px;">
+      <button class="submit-btn" onclick="submitForm()">Submit Entries</button>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Event toggle
+// ─────────────────────────────────────────────────────────────
+function toggleEvent(id) {
+  const row = document.querySelector(`.event-row[data-id="${id}"]`);
+  const cb  = document.getElementById(`evt-${id}`);
+  if (selectedEvts.has(id)) {
+    selectedEvts.delete(id);
+    row.classList.remove('selected');
+    cb.checked = false;
+  } else {
+    selectedEvts.add(id);
+    row.classList.add('selected');
+    cb.checked = true;
+    setTimeout(() => document.getElementById(`time-${id}`)?.focus(), 50);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Time input auto-formatter
+// ─────────────────────────────────────────────────────────────
+function formatTimeInput(el) {
+  let v = el.value.replace(/[^0-9:.]/g, '');
+  el.value = v;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Event visibility filter (by age + gender)
+// ─────────────────────────────────────────────────────────────
+function matchesGender(evGender, selectedGender) {
+  const normalized = String(evGender || '').trim().toUpperCase();
+  if (!selectedGender) return true;
+  if (normalized === 'X' || normalized === 'O' || normalized === 'MIXED' || normalized === 'OPEN') {
+    return true;
+  }
+  return normalized === selectedGender;
+}
+
+function matchesAgeGroup(age, ageGroup) {
+  if (!age || age < 5) return true;
+  const ag = ageGroup.trim();
+  if (/^open$/i.test(ag)) return true;
+  const underMatch = ag.match(/^(\d+)\s*&\s*[Uu]nder$/);
+  if (underMatch) return age <= +underMatch[1];
+  const overMatch = ag.match(/^(\d+)\s*&\s*[Oo]ver$/);
+  if (overMatch) return age >= +overMatch[1];
+  const rangeMatch = ag.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (rangeMatch) return age >= +rangeMatch[1] && age <= +rangeMatch[2];
+  return true;
+}
+
+function updateEventVisibility() {
+  const ageVal = +document.getElementById('age')?.value;
+  const checked = document.querySelector('input[name="gender"]:checked');
+  const gender = checked ? checked.value : null;
+
+  const container = document.getElementById('events-container');
+  if (!container) return;
+
+  let currentHeader = null;
+  let headerHasVisible = false;
+
+  for (const el of container.children) {
+    if (el.classList.contains('event-group-header')) {
+      if (currentHeader) currentHeader.style.display = headerHasVisible ? '' : 'none';
+      currentHeader = el;
+      headerHasVisible = false;
+    } else if (el.classList.contains('event-row')) {
+      const show = matchesGender(el.dataset.gender, gender)
+                && matchesAgeGroup(ageVal, el.dataset.ageGroup);
+      el.style.display = show ? '' : 'none';
+      if (show) {
+        headerHasVisible = true;
+      } else {
+        const id = +el.dataset.id;
+        if (selectedEvts.has(id)) {
+          selectedEvts.delete(id);
+          el.classList.remove('selected');
+          const cb = document.getElementById(`evt-${id}`);
+          if (cb) cb.checked = false;
+        }
+      }
+    }
+  }
+  if (currentHeader) currentHeader.style.display = headerHasVisible ? '' : 'none';
+
+  const anyVisible = [...container.querySelectorAll('.event-row')].some(r => r.style.display !== 'none');
+  const msg = document.getElementById('no-events-msg');
+  if (msg) msg.style.display = anyVisible ? 'none' : '';
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bind misc form events
+// ─────────────────────────────────────────────────────────────
+function bindFormEvents() {
+  // Prevent time-row click from propagating on input
+  document.querySelectorAll('.time-input-wrap input').forEach(inp => {
+    inp.addEventListener('click', e => e.stopPropagation());
+  });
+  // Filter events whenever gender or age changes
+  document.querySelectorAll('input[name="gender"]').forEach(r =>
+    r.addEventListener('change', updateEventVisibility)
+  );
+  const ageInput = document.getElementById('age');
+  if (ageInput) ageInput.addEventListener('input', updateEventVisibility);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Validation
+// ─────────────────────────────────────────────────────────────
+function clearErrors() {
+  document.querySelectorAll('.field-error').forEach(el => el.textContent = '');
+  document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+  const fe = document.getElementById('form-error');
+  if (fe) { fe.style.display = 'none'; fe.textContent = ''; }
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; }
+}
+
+function validate() {
+  clearErrors();
+  let ok = true;
+
+  const last  = document.getElementById('last-name');
+  const first = document.getElementById('first-name');
+  const age   = document.getElementById('age');
+  const team  = document.getElementById('team');
+  const gender = document.querySelector('input[name="gender"]:checked');
+
+  if (!last.value.trim())  { showFieldError('err-last',   'Required'); last.classList.add('error');  ok = false; }
+  if (!first.value.trim()) { showFieldError('err-first',  'Required'); first.classList.add('error'); ok = false; }
+  if (!age.value || +age.value < 5 || +age.value > 99) {
+    showFieldError('err-age', 'Enter a valid age (5–99)');
+    age.classList.add('error'); ok = false;
+  }
+  if (team.disabled) {
+    showFieldError('err-team', 'No teams are configured for this meet.');
+    team.classList.add('error');
+    ok = false;
+  } else if (!team.value.trim()) {
+    showFieldError('err-team', 'Required');
+    team.classList.add('error');
+    ok = false;
+  }
+  if (!gender)             { showFieldError('err-gender', 'Please select a gender'); ok = false; }
+
+  if (selectedEvts.size === 0) {
+    showFieldError('err-events', 'Select at least one event.');
+    ok = false;
+  }
+
+  return ok;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Submit
+// ─────────────────────────────────────────────────────────────
+async function submitForm() {
+  if (!validate()) return;
+
+  const btn = document.querySelector('.submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  const last   = document.getElementById('last-name').value.trim();
+  const first  = document.getElementById('first-name').value.trim();
+  const age    = +document.getElementById('age').value;
+  const team   = document.getElementById('team').value.trim();
+  const gender = document.querySelector('input[name="gender"]:checked').value;
+
+  const entries = [...selectedEvts].map(id => ({
+    event_id:   id,
+    entry_time: (document.getElementById(`time-${id}`)?.value.trim() || 'NT') || 'NT',
+  }));
+
+  const payload = {
+    last_name:  last,
+    first_name: first,
+    age,
+    team,
+    gender,
+    meet_id: activeMeet.id,
+    entries,
+  };
+
+  try {
+    const res  = await fetch(`${API_BASE}/entries`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.detail || 'Submission failed.');
+    }
+
+    // Build summary list
+    const evtNames = entries.map(e => {
+      const ev = allEvents.find(x => x.id === e.event_id);
+      const eventLabel = ev ? `#${ev.event_number} ${ev.distance} ${ev.stroke}` : 'Event';
+      return `${eventLabel} — ${e.entry_time}`;
+    });
+
+    document.getElementById('app').innerHTML = `
+      <div class="success-screen">
+        <div class="check">✓</div>
+        <h2>Submitted!</h2>
+        <p>Entries submitted for <strong>${first} ${last}</strong></p>
+        <div class="summary">
+          <strong style="color:var(--lane)">${activeMeet.name}</strong><br/>
+          ${evtNames.map(n => `• ${n}`).join('<br/>')}
+        </div>
+        <button class="another-btn" onclick="resetForm()">Submit Another Athlete</button>
+      </div>`;
+
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Submit Entries';
+    const fe = document.getElementById('form-error');
+    if (fe) { fe.textContent = e.message; fe.style.display = 'block'; }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Reset for another athlete
+// ─────────────────────────────────────────────────────────────
+function resetForm() {
+  selectedEvts.clear();
+  document.getElementById('app').innerHTML = renderForm();
+  bindFormEvents();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────────────────────
+function formatDate(iso) {
+  const [y, m, d] = iso.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[+m-1]} ${+d}, ${y}`;
+}
+
+function isDeadlinePassed(deadline) {
+  if (!deadline) return false;
+  // Compare using local date strings to avoid timezone-shift issues
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  return todayStr > deadline;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
