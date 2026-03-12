@@ -33,6 +33,7 @@ class Meet(Base):
     date       = Column(String, nullable=False)           # stored as ISO string "YYYY-MM-DD"
     deadline   = Column(String, nullable=True)            # sign-up deadline, ISO string "YYYY-MM-DD"
     course     = Column(String, nullable=False)           # "LCM" | "SCY" | "SCM"
+    location   = Column(String, nullable=True)            # e.g. "Central Pool, Downtown"
     team_names = Column(String, nullable=False, default="[]")
     is_active  = Column(Boolean, default=False)           # only one meet should be active at a time
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -96,6 +97,10 @@ def init_db():
     if "team_names" not in meet_columns:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE meets ADD COLUMN team_names TEXT NOT NULL DEFAULT '[]'"))
+
+    if "location" not in meet_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE meets ADD COLUMN location TEXT"))
 
     if inspector.has_table("entries"):
         entry_columns = {column["name"] for column in inspector.get_columns("entries")}

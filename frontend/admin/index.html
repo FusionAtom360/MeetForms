@@ -453,6 +453,10 @@
           </select>
         </div>
         <div class="field">
+          <label class="fl">Location</label>
+          <input type="text" id="new-location" placeholder="Central Pool, Downtown" />
+        </div>
+        <div class="field">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--silver);letter-spacing:0;text-transform:none;margin-top:30px;">
             <input type="checkbox" id="new-active" style="width:16px;height:16px;accent-color:var(--pool);" />
             Set as active meet
@@ -755,6 +759,7 @@ async function createMeet() {
   const date     = document.getElementById('new-date').value;
   const deadline = document.getElementById('new-deadline').value;
   const course   = document.getElementById('new-course').value;
+  const location = document.getElementById('new-location').value.trim();
   const team_names = getTeamsFromInput();
   const active   = document.getElementById('new-active').checked;
   const events   = getEventsFromTable();
@@ -765,7 +770,7 @@ async function createMeet() {
   try {
     await apiFetch('/admin/meets', {
       method: 'POST',
-      body: JSON.stringify({ name, date, deadline, course, team_names, is_active: active, events }),
+      body: JSON.stringify({ name, date, deadline, course, location, team_names, is_active: active, events }),
     });
     toast('Meet created!', 'success');
     resetMeetForm();
@@ -794,6 +799,7 @@ function copyMeet(id) {
   document.getElementById('new-date').value = '';
   document.getElementById('new-deadline').value = '';
   document.getElementById('new-course').value = meet.course;
+  document.getElementById('new-location').value = meet.location || '';
   document.getElementById('new-teams').value = (meet.team_names || []).join('\n');
   document.getElementById('new-active').checked = false;
   clearEventsTable();
@@ -819,6 +825,7 @@ function editMeet(id) {
   document.getElementById('new-date').value = meet.date;
   document.getElementById('new-deadline').value = meet.deadline || '';
   document.getElementById('new-course').value = meet.course;
+  document.getElementById('new-location').value = meet.location || '';
   document.getElementById('new-teams').value = (meet.team_names || []).join('\n');
   document.getElementById('new-active').checked = !!meet.is_active;
   clearEventsTable();
@@ -885,9 +892,10 @@ async function updateMeet(id) {
   }
 
   try {
+    const location = document.getElementById('new-location').value.trim();
     await apiFetch(`/admin/meets/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ name, date, deadline, course, team_names, is_active: active, events }),
+      body: JSON.stringify({ name, date, deadline, course, location, team_names, is_active: active, events }),
     });
     toast('Meet updated!', 'success');
     resetMeetForm();
@@ -992,6 +1000,7 @@ function resetMeetForm() {
   document.getElementById('new-date').value = '';
   document.getElementById('new-deadline').value = '';
   document.getElementById('new-course').value = 'SCY';
+  document.getElementById('new-location').value = '';
   document.getElementById('new-teams').value = '';
   document.getElementById('new-active').checked = false;
   clearEventsTable();
@@ -1393,7 +1402,7 @@ function printEntries() {
     '</style></head><body>' +
     '<div class="header">' +
     '<h1>' + escapeHtml(meet.name) + '</h1>' +
-    '<p><strong>Date:</strong> ' + meet.date + ' · <strong>Course:</strong> ' + meet.course + '</p>' +
+    '<p><strong>Date:</strong> ' + meet.date + ' · <strong>Course:</strong> ' + meet.course + (meet.location ? ' · <strong>Location:</strong> ' + escapeHtml(meet.location) : '') + '</p>' +
     '</div>' +
     groupsHtml +
     '</body></html>';

@@ -423,6 +423,7 @@
   <div class="meta">
     <span id="meet-date"></span>
     <span id="meet-course"></span>
+    <span id="meet-location"></span>
     <span id="meet-deadline"></span>
   </div>
 </header>
@@ -464,6 +465,10 @@ async function init() {
     document.getElementById('meet-title').textContent  = activeMeet.name;
     document.getElementById('meet-date').textContent   = formatDate(activeMeet.date);
     document.getElementById('meet-course').textContent = activeMeet.course;
+
+    if (activeMeet.location) {
+      document.getElementById('meet-location').textContent = activeMeet.location;
+    }
 
     if (activeMeet.deadline) {
       const deadlineEl = document.getElementById('meet-deadline');

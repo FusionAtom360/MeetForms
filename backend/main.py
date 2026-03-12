@@ -83,6 +83,7 @@ class MeetIn(BaseModel):
     date:      str          # "YYYY-MM-DD"
     deadline:  Optional[str] = None  # "YYYY-MM-DD"
     course:    str          # "LCM" | "SCY" | "SCM"
+    location:  Optional[str] = None  # meet location/pool name
     team_names: List[str] = []
     is_active: bool = False
     events:    List[EventIn] = []
@@ -92,6 +93,7 @@ class MeetUpdate(BaseModel):
     date:      Optional[str]  = None
     deadline:  Optional[str]  = None
     course:    Optional[str]  = None
+    location:  Optional[str]  = None
     team_names: Optional[List[str]] = None
     is_active: Optional[bool] = None
     events:    Optional[List[EventIn]] = None   # if provided, replaces all events
@@ -198,6 +200,7 @@ def get_active_meet(db: Session = Depends(get_db)):
         "date":     meet.date,
         "deadline": meet.deadline,
         "course":   meet.course,
+        "location": meet.location,
         "team_names": parse_team_names(meet.team_names),
         "events": [
             {
@@ -287,6 +290,7 @@ def list_meets(db: Session = Depends(get_db)):
             "date":      m.date,
             "deadline":  m.deadline,
             "course":    m.course,
+            "location":  m.location,
             "team_names": parse_team_names(m.team_names),
             "is_active": m.is_active,
             "event_count": len(m.events),
@@ -320,6 +324,7 @@ def create_meet(payload: MeetIn, db: Session = Depends(get_db)):
         date      = payload.date,
         deadline  = payload.deadline,
         course    = payload.course,
+        location  = payload.location,
         team_names = json.dumps(normalize_team_names(payload.team_names)),
         is_active = payload.is_active,
     )
@@ -357,6 +362,7 @@ def update_meet(meet_id: int, payload: MeetUpdate, db: Session = Depends(get_db)
     if payload.date      is not None: meet.date      = payload.date
     if payload.deadline  is not None: meet.deadline  = payload.deadline
     if payload.course    is not None: meet.course    = payload.course
+    if payload.location  is not None: meet.location  = payload.location
     if payload.team_names is not None: meet.team_names = json.dumps(normalize_team_names(payload.team_names))
 
     if payload.is_active is True:
