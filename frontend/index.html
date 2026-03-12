@@ -75,6 +75,15 @@
       line-height: 1;
       color: var(--white);
     }
+    header .venue {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(18px, 3.2vw, 30px);
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      line-height: 1.1;
+      color: var(--lane);
+      margin-top: 2px;
+    }
     header .meta {
       font-size: 13px;
       color: var(--silver);
@@ -420,10 +429,9 @@
 <header id="page-header">
   <div class="meet-label">Swim Meet Registration</div>
   <h1 id="meet-title">Loading…</h1>
+  <div class="venue" id="meet-venue"></div>
   <div class="meta">
     <span id="meet-date"></span>
-    <span id="meet-course"></span>
-    <span id="meet-location"></span>
     <span id="meet-deadline"></span>
   </div>
 </header>
@@ -463,12 +471,8 @@ async function init() {
     allEvents  = activeMeet.events;
 
     document.getElementById('meet-title').textContent  = activeMeet.name;
-    document.getElementById('meet-date').textContent   = formatDate(activeMeet.date);
-    document.getElementById('meet-course').textContent = activeMeet.course;
-
-    if (activeMeet.location) {
-      document.getElementById('meet-location').textContent = activeMeet.location;
-    }
+    document.getElementById('meet-venue').textContent  = formatDate(activeMeet.date);
+    document.getElementById('meet-date').textContent   = activeMeet.location || "No Location";
 
     if (activeMeet.deadline) {
       const deadlineEl = document.getElementById('meet-deadline');
@@ -520,8 +524,8 @@ function renderForm() {
 
   const genderLabel = g => {
     const normalized = String(g || '').trim().toUpperCase();
-    if (normalized === 'M') return 'Men / Boys';
-    if (normalized === 'F') return 'Women / Girls';
+    if (normalized === 'M') return 'Boys';
+    if (normalized === 'F') return 'Girls';
     if (normalized === 'X' || normalized === 'MIXED') return 'Mixed';
     return 'Open';
   };
