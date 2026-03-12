@@ -374,6 +374,24 @@
     #toast.show { transform: translateY(0); opacity: 1; }
     #toast.success { border-color: var(--green); color: var(--green); }
     #toast.error   { border-color: var(--red);   color: var(--red); }
+
+    /* ── print styles ── */
+    .no-print { display: none; }
+    @media print {
+      body { background: white; color: black; }
+      header, .topbar, .tab-nav, .card-header, .field-row, .events-editor-wrap, .filter-bar, .export-btns, .btn, .logout-btn, .meet-actions { display: none; }
+      .tab-content { display: block; padding: 0; }
+      #shell { display: block; min-height: auto; }
+      .card { background: white; border: none; padding: 0; margin-bottom: 24px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      th { background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: bold; }
+      td { border: 1px solid #ddd; padding: 8px; color: #0b1f3a; }
+      tr:hover td { background: transparent; }
+      .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+      .stat-box { border: 1px solid #ddd; padding: 12px; }
+      .stat-val { color: #0077b6; }
+      .stat-label { color: #666; }
+    }
   </style>
 </head>
 <body>
@@ -528,6 +546,7 @@
         <div class="export-btns" id="export-bar">
           <button class="btn btn-accent btn-sm" onclick="exportFile('csv')">⬇ CSV</button>
           <button class="btn btn-primary btn-sm" onclick="exportFile('hy3')">⬇ Hy-Tek .hy3</button>
+          <button class="btn btn-ghost btn-sm" onclick="printEntries()">🖨 Print</button>
         </div>
         <div class="field" style="flex:0 0 160px">
           <label class="fl">Sort By</label>
@@ -628,12 +647,28 @@ function renderEntriesLoading(rowCount = 6) {
 // ─────────────────────────────────────────────────────────────
 // Auth
 // ─────────────────────────────────────────────────────────────
+function initializeAuth() {
+  const savedKey = localStorage.getItem('adminKey');
+  if (savedKey) {
+    adminKey = savedKey;
+    apiFetch('/admin/meets').then(() => {
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('shell').style.display = 'flex';
+      loadMeets();
+    }).catch(() => {
+      localStorage.removeItem('adminKey');
+      adminKey = '';
+    });
+  }
+}
+
 function doLogin() {
   const key = document.getElementById('key-input').value.trim();
   if (!key) return;
   adminKey = key;
   // Verify by hitting a protected endpoint
   apiFetch('/admin/meets').then(() => {
+    localStorage.setItem('adminKey', adminKey);
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('shell').style.display = 'flex';
     loadMeets();
@@ -645,6 +680,7 @@ function doLogin() {
 
 function logout() {
   adminKey = '';
+  localStorage.removeItem('adminKey');
   document.getElementById('login-overlay').style.display = 'flex';
   document.getElementById('shell').style.display = 'none';
   document.getElementById('key-input').value = '';
@@ -1012,6 +1048,7 @@ function loadSampleEvents() {
 // Add one empty row by default on page load
 window.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('events-tbody')) addEventRow();
+  initializeAuth();
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -1295,6 +1332,73 @@ async function exportFile(type) {
     URL.revokeObjectURL(url);
     toast(`${type.toUpperCase()} downloaded.`, 'success');
   } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Print
+// ─────────────────────────────────────────────────────────────
+function printEntries() {
+  if (!currentMeetId) { toast('Select a meet first.', 'error'); return; }
+  const meet = allMeets.find(m => m.id === currentMeetId);
+  if (!meet) { toast('Meet not found.', 'error'); return; }
+  
+  const entries = getFilteredEntries();
+  const athletes = new Set(entries.map(e => e.last_name + '|' + e.first_name + '|' + e.team)).size;
+  const teams = new Set(entries.map(e => e.team)).size;
+  const now = new Date().toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', second: '2-digit'
+  });
+  
+  let tableRows = '';
+  for (const entry of entries) {
+    tableRows += '<tr>' +
+      '<td>' + escapeHtml(entry.last_name) + '</td>' +
+      '<td>' + escapeHtml(entry.first_name) + '</td>' +
+      '<td>' + entry.age + '</td>' +
+      '<td>' + escapeHtml(entry.gender) + '</td>' +
+      '<td>' + escapeHtml(entry.team) + '</td>' +
+      '<td>#' + entry.event_number + '</td>' +
+      '<td>' + escapeHtml(entry.event_name) + '</td>' +
+      '<td>' + escapeHtml(entry.entry_time) + '</td>' +
+      '<td>' + formatSubmittedAt(entry.submitted_at) + '</td>' +
+      '</tr>';
+  }
+  
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escapeHtml(meet.name) + ' - Entries</title>' +
+    '<style>' +
+    'body { font-family: Arial, sans-serif; margin: 20px; background: white; color: black; }' +
+    '.header { margin-bottom: 24px; border-bottom: 3px solid #0077b6; padding-bottom: 12px; }' +
+    '.header h1 { margin: 0 0 4px 0; font-size: 24px; color: #0077b6; }' +
+    '.header p { margin: 2px 0; font-size: 13px; color: #666; }' +
+    '.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }' +
+    '.stat { border: 1px solid #ddd; padding: 16px; text-align: center; }' +
+    '.stat-value { font-size: 32px; font-weight: bold; color: #0077b6; }' +
+    '.stat-label { font-size: 11px; color: #666; text-transform: uppercase; margin-top: 8px; }' +
+    'table { width: 100%; border-collapse: collapse; margin-top: 20px; }' +
+    'th { background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase; }' +
+    'td { border: 1px solid #ddd; padding: 10px; font-size: 14px; }' +
+    'tr:nth-child(even) { background: #f9f9f9; }' +
+    '</style></head><body>' +
+    '<div class="header">' +
+    '<h1>' + escapeHtml(meet.name) + '</h1>' +
+    '<p><strong>Date:</strong> ' + meet.date + ' · <strong>Course:</strong> ' + meet.course + '</p>' +
+    '<p><strong>Printed:</strong> ' + now + '</p>' +
+    '</div>' +
+    '<div class="stats">' +
+    '<div class="stat"><div class="stat-value">' + athletes + '</div><div class="stat-label">Athletes</div></div>' +
+    '<div class="stat"><div class="stat-value">' + entries.length + '</div><div class="stat-label">Entries</div></div>' +
+    '<div class="stat"><div class="stat-value">' + teams + '</div><div class="stat-label">Teams</div></div>' +
+    '</div>' +
+    '<table><thead><tr>' +
+    '<th>Last</th><th>First</th><th>Age</th><th>G</th><th>Team</th><th>#</th><th>Event</th><th>Time</th><th>Submitted</th>' +
+    '</tr></thead><tbody>' + tableRows + '</tbody></table>' +
+    '</body></html>';
+  
+  const printWindow = window.open('', '', 'height=600,width=1000');
+  printWindow.document.write(html);
+  printWindow.document.close();
+  setTimeout(() => printWindow.print(), 250);
 }
 
 // ─────────────────────────────────────────────────────────────
