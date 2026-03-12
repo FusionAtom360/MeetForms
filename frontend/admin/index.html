@@ -223,6 +223,49 @@
     .meet-meta { font-size: 12px; color: var(--mid); margin-top: 2px; }
     .meet-actions { display: flex; gap: 8px; align-items: center; }
 
+    /* ── loading skeletons ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--input) 25%, rgba(0,119,182,0.15) 50%, var(--input) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .meet-item.loading {
+      pointer-events: none;
+      border-color: rgba(0,180,216,0.08);
+    }
+    .meet-item.loading .active-pip {
+      background: rgba(0,180,216,0.12);
+      box-shadow: none;
+    }
+    .skeleton-text {
+      height: 14px;
+      margin-bottom: 8px;
+    }
+    .skeleton-text:last-child { margin-bottom: 0; }
+    .skeleton-title {
+      height: 18px;
+      width: 42%;
+      margin-bottom: 8px;
+    }
+    .skeleton-meta {
+      height: 12px;
+      width: 78%;
+    }
+    .skeleton-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .skeleton-pill {
+      width: 72px;
+      height: 30px;
+      border-radius: var(--radius);
+    }
+
     /* ── events editor (textarea-based for simplicity) ── */
     .events-editor-wrap { margin-top: 14px; }
     .events-editor-wrap textarea {
@@ -260,11 +303,19 @@
       color: var(--silver);
     }
     tr:hover td { background: rgba(0,119,182,0.08); color: var(--white); }
+    tr.loading-row:hover td { background: transparent; color: var(--silver); }
     td.mono {
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 15px; font-weight: 600;
       color: var(--white); letter-spacing: 0.5px;
     }
+    .table-skeleton {
+      height: 12px;
+      margin: 2px 0;
+    }
+    .table-skeleton.short { width: 55%; }
+    .table-skeleton.medium { width: 72%; }
+    .table-skeleton.long { width: 88%; }
 
     /* ── filters ── */
     .filter-bar {
@@ -295,6 +346,10 @@
       font-size: 11px; color: var(--mid);
       letter-spacing: 1px; text-transform: uppercase;
       margin-top: 4px;
+    }
+    .stat-skeleton {
+      height: 28px;
+      width: 70%;
     }
 
     /* ── export buttons (inline in filter bar) ── */
@@ -525,6 +580,51 @@ let allEntries  = [];
 let currentMeetId = null;
 let editingEntryId = null;
 
+function renderMeetListLoading(count = 3) {
+  const el = document.getElementById('meet-list');
+  if (!el) return;
+  el.innerHTML = Array.from({ length: count }, () => `
+    <div class="meet-item loading">
+      <div class="active-pip"></div>
+      <div class="meet-info">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-meta"></div>
+      </div>
+      <div class="skeleton-actions">
+        <div class="skeleton skeleton-pill"></div>
+        <div class="skeleton skeleton-pill"></div>
+        <div class="skeleton skeleton-pill"></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderStatsLoading() {
+  document.getElementById('stats-row').style.display = 'grid';
+  document.getElementById('stat-athletes').innerHTML = '<div class="skeleton stat-skeleton"></div>';
+  document.getElementById('stat-entries').innerHTML = '<div class="skeleton stat-skeleton"></div>';
+  document.getElementById('stat-teams').innerHTML = '<div class="skeleton stat-skeleton"></div>';
+}
+
+function renderEntriesLoading(rowCount = 6) {
+  const tbody = document.getElementById('entries-tbody');
+  if (!tbody) return;
+  renderStatsLoading();
+  document.getElementById('export-bar').classList.remove('visible');
+  tbody.innerHTML = Array.from({ length: rowCount }, (_, index) => `
+    <tr class="loading-row">
+      <td><div class="skeleton table-skeleton ${index % 2 === 0 ? 'medium' : 'short'}"></div></td>
+      <td><div class="skeleton table-skeleton medium"></div></td>
+      <td><div class="skeleton table-skeleton short"></div></td>
+      <td><div class="skeleton table-skeleton short"></div></td>
+      <td><div class="skeleton table-skeleton long"></div></td>
+      <td><div class="skeleton table-skeleton short"></div></td>
+      <td><div class="skeleton table-skeleton long"></div></td>
+      <td><div class="skeleton table-skeleton medium"></div></td>
+      <td><div class="skeleton table-skeleton medium"></div></td>
+      <td><div class="skeleton table-skeleton short"></div></td>
+    </tr>`).join('');
+}
+
 // ─────────────────────────────────────────────────────────────
 // Auth
 // ─────────────────────────────────────────────────────────────
@@ -584,6 +684,7 @@ function switchTab(name) {
 // Meets tab
 // ─────────────────────────────────────────────────────────────
 async function loadMeets() {
+  renderMeetListLoading();
   try {
     allMeets = await apiFetch('/admin/meets');
     renderMeetList();
@@ -925,9 +1026,19 @@ function populateMeetSelect() {
 
 async function loadEntries() {
   const meetId = document.getElementById('entries-meet-select').value;
-  if (!meetId) return;
+  if (!meetId) {
+    currentMeetId = null;
+    editingEntryId = null;
+    allEntries = [];
+    document.getElementById('export-bar').classList.remove('visible');
+    document.getElementById('stats-row').style.display = 'none';
+    renderTable([]);
+    return;
+  }
   currentMeetId = +meetId;
   editingEntryId = null;
+  allEntries = [];
+  renderEntriesLoading();
 
   try {
     allEntries = await apiFetch(`/admin/entries?meet_id=${meetId}`);
