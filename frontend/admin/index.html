@@ -1357,21 +1357,20 @@ function printEntries() {
   let groupsHtml = '';
   for (const key of Object.keys(groups).sort()) {
     const group = groups[key];
-    const genderLabel = group.gender === 'M' ? 'Male' : group.gender === 'F' ? 'Female' : 'Mixed';
-    groupsHtml += '<div class="event-group" style="margin-bottom: 32px;">' +
-      '<h2 style="margin: 0 0 12px 0; font-size: 16px; color: #0077b6;">#' + group.event_number + ' ' + genderLabel + ' ' + group.age_group + ' ' + escapeHtml(group.event_name) + '</h2>' +
-      '<table style="width: 100%; border-collapse: collapse;">' +
+    const genderLabel = group.gender === 'M' ? 'Boys' : group.gender === 'F' ? 'Girls' : 'Mixed';
+    const ageGroupLabel = group.age_group || 'Open';
+    groupsHtml += '<div class="event-group" style="margin-bottom: 28px;">' +
+      '<h2 style="margin: 0 0 8px 0; font-size: 14px; color: #0077b6; font-weight: bold;">#' + group.event_number + ' ' + genderLabel + ' ' + ageGroupLabel + ' ' + escapeHtml(group.event_name) + '</h2>' +
+      '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">' +
       '<thead><tr>' +
-      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase;">Last</th>' +
-      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase;">First</th>' +
-      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase;">Time</th>' +
+      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-weight: bold; font-size: 11px; text-transform: uppercase;">Name</th>' +
+      '<th style="background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-weight: bold; font-size: 11px; text-transform: uppercase;">Time</th>' +
       '</tr></thead><tbody>';
     
     for (const entry of group.entries) {
       groupsHtml += '<tr>' +
-        '<td style="border: 1px solid #ddd; padding: 10px; font-size: 14px;">' + escapeHtml(entry.last_name) + '</td>' +
-        '<td style="border: 1px solid #ddd; padding: 10px; font-size: 14px;">' + escapeHtml(entry.first_name) + '</td>' +
-        '<td style="border: 1px solid #ddd; padding: 10px; font-size: 14px;">' + escapeHtml(entry.entry_time) + '</td>' +
+        '<td style="border: 1px solid #ddd; padding: 6px 8px;">' + escapeHtml(entry.last_name) + ', ' + escapeHtml(entry.first_name) + '</td>' +
+        '<td style="border: 1px solid #ddd; padding: 6px 8px;">' + escapeHtml(entry.entry_time) + '</td>' +
         '</tr>';
     }
     
@@ -1380,14 +1379,15 @@ function printEntries() {
   
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escapeHtml(meet.name) + ' - Entries</title>' +
     '<style>' +
-    'body { font-family: Arial, sans-serif; margin: 20px; background: white; color: black; }' +
-    '.header { margin-bottom: 24px; border-bottom: 3px solid #0077b6; padding-bottom: 12px; }' +
-    '.header h1 { margin: 0 0 4px 0; font-size: 24px; color: #0077b6; }' +
-    '.header p { margin: 2px 0; font-size: 13px; color: #666; }' +
-    '.event-group h2 { margin: 0 0 12px 0; font-size: 16px; color: #0077b6; }' +
+    'body { font-family: Arial, sans-serif; margin: 16px; background: white; color: black; font-size: 13px; }' +
+    '.header { margin-bottom: 16px; border-bottom: 3px solid #0077b6; padding-bottom: 8px; }' +
+    '.header h1 { margin: 0 0 2px 0; font-size: 20px; color: #0077b6; }' +
+    '.header p { margin: 2px 0; font-size: 12px; color: #666; }' +
+    '.event-group { margin-bottom: 24px; }' +
+    '.event-group h2 { margin: 0 0 6px 0; font-size: 13px; color: #0077b6; font-weight: bold; }' +
     'table { border-collapse: collapse; }' +
-    'th { background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; font-size: 12px; text-transform: uppercase; }' +
-    'td { border: 1px solid #ddd; padding: 10px; font-size: 14px; }' +
+    'th { background: #f0f4f8; color: #0b1f3a; border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-weight: bold; font-size: 11px; text-transform: uppercase; }' +
+    'td { border: 1px solid #ddd; padding: 6px 8px; font-size: 13px; }' +
     '</style></head><body>' +
     '<div class="header">' +
     '<h1>' + escapeHtml(meet.name) + '</h1>' +
