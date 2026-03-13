@@ -28,6 +28,8 @@
       color: var(--white);
       font-family: 'Barlow', sans-serif;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     /* ── login overlay ── */
@@ -79,7 +81,7 @@
     .login-error { color: var(--red); font-size: 13px; margin-top: 10px; }
 
     /* ── shell ── */
-    #shell { display: none; flex-direction: column; min-height: 100vh; }
+    #shell { display: none; flex-direction: column; flex: 1; }
 
     /* top bar */
     .topbar {
@@ -495,10 +497,10 @@
       <div class="field" style="margin-bottom:14px;">
         <label class="fl">Category</label>
         <div class="cat-toggle">
-          <input type="radio" name="new-category-type" id="cat-age-group" value="age_group" checked onchange="updateEventRowAgeGroups()" />
-          <label for="cat-age-group">Age Groups</label>
-          <input type="radio" name="new-category-type" id="cat-division" value="division" onchange="updateEventRowAgeGroups()" />
-          <label for="cat-division">Division (JV / Varsity)</label>
+          <input type="radio" name="new-category-type" id="cat-age-group" value="age_group" checked />
+          <label for="cat-age-group" onclick="setTimeout(updateEventRowAgeGroups, 0)">Age Groups</label>
+          <input type="radio" name="new-category-type" id="cat-division" value="division" />
+          <label for="cat-division" onclick="setTimeout(updateEventRowAgeGroups, 0)">Division</label>
         </div>
       </div>
 
@@ -523,7 +525,7 @@
                 <th>Distance</th>
                 <th>Stroke</th>
                 <th>Gender</th>
-                <th>Age Group</th>
+                <th id="events-age-group-header">Age Group</th>
                 <th></th>
               </tr>
             </thead>
@@ -532,7 +534,7 @@
           </table>
         </div>
         <button type="button" class="btn btn-ghost btn-sm" onclick="addEventRow()">+ Add Event</button>
-        <div class="events-hint">
+        <div class="events-hint" id="events-hint">
           Fill in each event. Gender supports Male, Female, or Mixed. Age group can be bracketed or Open.
         </div>
       </div>
@@ -851,6 +853,7 @@ function copyMeet(id) {
   // Set category type BEFORE adding rows
   const copyCatVal = meet.category_type || 'age_group';
   document.querySelectorAll('input[name="new-category-type"]').forEach(r => r.checked = r.value === copyCatVal);
+  updateEventRowAgeGroups();
   clearEventsTable();
   if (meet.events && meet.events.length) {
     for (const ev of meet.events) addEventRow(ev);
@@ -881,6 +884,7 @@ function editMeet(id) {
   // Set category type BEFORE adding rows so getAgeGroupOptions() reads the right value
   const catVal = meet.category_type || 'age_group';
   document.querySelectorAll('input[name="new-category-type"]').forEach(r => r.checked = r.value === catVal);
+  updateEventRowAgeGroups();
   clearEventsTable();
   if (meet.events && meet.events.length) {
     for (const ev of meet.events) addEventRow(ev);
@@ -988,6 +992,16 @@ function getAgeGroupOptions(currentValue) {
 }
 
 function updateEventRowAgeGroups() {
+  const isDivision = getCategoryType() === 'division';
+  // Update column header
+  const hdr = document.getElementById('events-age-group-header');
+  if (hdr) hdr.textContent = isDivision ? 'Division' : 'Age Group';
+  // Update hint
+  const hint = document.getElementById('events-hint');
+  if (hint) hint.textContent = isDivision
+    ? 'Fill in each event. Division can be JV, Varsity, or Open.'
+    : 'Fill in each event. Gender supports Male, Female, or Mixed. Age group can be bracketed or Open.';
+  // Update each existing row
   document.querySelectorAll('#events-tbody tr').forEach(row => {
     const selects = row.querySelectorAll('select');
     const ageGroupSel = selects[2]; // stroke(0), gender(1), age_group(2)
@@ -1090,6 +1104,7 @@ function resetMeetForm() {
   document.getElementById('new-active').checked = false;
   document.getElementById('cat-age-group').checked = true;
   document.getElementById('cat-division').checked = false;
+  updateEventRowAgeGroups();
   clearEventsTable();
   addEventRow();
 }
@@ -1116,28 +1131,66 @@ async function deleteMeet(id, name) {
 
 function loadSampleEvents() {
   clearEventsTable();
-  const sample = [
-    {event_number:1, distance:200, stroke:'Medley Relay', gender:'M', age_group:'Open'},
-    {event_number:2, distance:200, stroke:'Medley Relay', gender:'F', age_group:'Open'},
-    {event_number:3, distance:200, stroke:'Freestyle', gender:'M', age_group:'Open'},
-    {event_number:4, distance:200, stroke:'Freestyle', gender:'F', age_group:'Open'},
-    {event_number:5, distance:100, stroke:'Backstroke', gender:'M', age_group:'Open'},
-    {event_number:6, distance:100, stroke:'Backstroke', gender:'F', age_group:'Open'},
-    {event_number:7, distance:100, stroke:'Breaststroke', gender:'M', age_group:'Open'},
-    {event_number:8, distance:100, stroke:'Breaststroke', gender:'F', age_group:'Open'},
-    {event_number:9, distance:200, stroke:'Butterfly', gender:'M', age_group:'Open'},
-    {event_number:10, distance:200, stroke:'Butterfly', gender:'F', age_group:'Open'},
-    {event_number:11, distance:400, stroke:'Individual Medley', gender:'M', age_group:'Open'},
-    {event_number:12, distance:400, stroke:'Individual Medley', gender:'F', age_group:'Open'},
-    {event_number:13, distance:200, stroke:'Freestyle Relay', gender:'M', age_group:'Open'},
-    {event_number:14, distance:200, stroke:'Freestyle Relay', gender:'F', age_group:'Open'},
-    {event_number:15, distance:50, stroke:'Freestyle', gender:'M', age_group:'Open'},
-    {event_number:16, distance:50, stroke:'Freestyle', gender:'F', age_group:'Open'},
-    {event_number:17, distance:100, stroke:'Butterfly', gender:'M', age_group:'Open'},
-    {event_number:18, distance:100, stroke:'Butterfly', gender:'F', age_group:'Open'},
-    {event_number:19, distance:100, stroke:'Freestyle', gender:'M', age_group:'Open'},
-    {event_number:20, distance:100, stroke:'Freestyle', gender:'F', age_group:'Open'},
-  ];
+  const isDivision = getCategoryType() === 'division';
+
+  let sample;
+  if (isDivision) {
+    // 14 JV + 16 Varsity = 30 events
+    sample = [
+      // JV (7 events × 2 genders)
+      {event_number:1,  distance:200, stroke:'Medley Relay',    gender:'M', age_group:'JV'},
+      {event_number:2,  distance:200, stroke:'Medley Relay',    gender:'F', age_group:'JV'},
+      {event_number:3,  distance:50,  stroke:'Freestyle',       gender:'M', age_group:'JV'},
+      {event_number:4,  distance:50,  stroke:'Freestyle',       gender:'F', age_group:'JV'},
+      {event_number:5,  distance:100, stroke:'Backstroke',      gender:'M', age_group:'JV'},
+      {event_number:6,  distance:100, stroke:'Backstroke',      gender:'F', age_group:'JV'},
+      {event_number:7,  distance:100, stroke:'Breaststroke',    gender:'M', age_group:'JV'},
+      {event_number:8,  distance:100, stroke:'Breaststroke',    gender:'F', age_group:'JV'},
+      {event_number:9,  distance:100, stroke:'Butterfly',       gender:'M', age_group:'JV'},
+      {event_number:10, distance:100, stroke:'Butterfly',       gender:'F', age_group:'JV'},
+      {event_number:11, distance:100, stroke:'Freestyle',       gender:'M', age_group:'JV'},
+      {event_number:12, distance:100, stroke:'Freestyle',       gender:'F', age_group:'JV'},
+      {event_number:13, distance:200, stroke:'Freestyle Relay', gender:'M', age_group:'JV'},
+      {event_number:14, distance:200, stroke:'Freestyle Relay', gender:'F', age_group:'JV'},
+      // Varsity (8 events × 2 genders)
+      {event_number:15, distance:200, stroke:'Medley Relay',      gender:'M', age_group:'Varsity'},
+      {event_number:16, distance:200, stroke:'Medley Relay',      gender:'F', age_group:'Varsity'},
+      {event_number:17, distance:50,  stroke:'Freestyle',         gender:'M', age_group:'Varsity'},
+      {event_number:18, distance:50,  stroke:'Freestyle',         gender:'F', age_group:'Varsity'},
+      {event_number:19, distance:100, stroke:'Backstroke',        gender:'M', age_group:'Varsity'},
+      {event_number:20, distance:100, stroke:'Backstroke',        gender:'F', age_group:'Varsity'},
+      {event_number:21, distance:100, stroke:'Breaststroke',      gender:'M', age_group:'Varsity'},
+      {event_number:22, distance:100, stroke:'Breaststroke',      gender:'F', age_group:'Varsity'},
+      {event_number:23, distance:100, stroke:'Butterfly',         gender:'M', age_group:'Varsity'},
+      {event_number:24, distance:100, stroke:'Butterfly',         gender:'F', age_group:'Varsity'},
+      {event_number:25, distance:200, stroke:'Individual Medley', gender:'M', age_group:'Varsity'},
+      {event_number:26, distance:200, stroke:'Individual Medley', gender:'F', age_group:'Varsity'},
+      {event_number:27, distance:100, stroke:'Freestyle',         gender:'M', age_group:'Varsity'},
+      {event_number:28, distance:100, stroke:'Freestyle',         gender:'F', age_group:'Varsity'},
+      {event_number:29, distance:400, stroke:'Freestyle Relay',   gender:'M', age_group:'Varsity'},
+      {event_number:30, distance:400, stroke:'Freestyle Relay',   gender:'F', age_group:'Varsity'},
+    ];
+  } else {
+    // 3 age groups × 6 events × 2 genders = 36 events
+    const events = [
+      {distance:200, stroke:'Medley Relay'},
+      {distance:50,  stroke:'Freestyle'},
+      {distance:100, stroke:'Backstroke'},
+      {distance:100, stroke:'Breaststroke'},
+      {distance:100, stroke:'Butterfly'},
+      {distance:200, stroke:'Freestyle Relay'},
+    ];
+    const groups = ['11-12', '13-14', '15-16'];
+    sample = [];
+    let num = 1;
+    for (const age_group of groups) {
+      for (const {distance, stroke} of events) {
+        sample.push({event_number: num++, distance, stroke, gender:'M', age_group});
+        sample.push({event_number: num++, distance, stroke, gender:'F', age_group});
+      }
+    }
+  }
+
   for (const ev of sample) addEventRow(ev);
 }
 
@@ -1538,7 +1591,7 @@ function toast(msg, type = 'success') {
 }
 </script>
 
-<footer style="background: var(--card); border-top: 1px solid rgba(0,180,216,0.2); padding: 16px; text-align: center; color: var(--silver); font-size: 12px;">
+<footer style="position: relative; z-index: 1; background: var(--card); border-top: 1px solid rgba(0,180,216,0.2); padding: 16px; text-align: center; color: var(--silver); font-size: 12px; margin-top: auto;">
   © 2026 Joseph Yakligian. All rights reserved.
 </footer>
 
