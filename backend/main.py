@@ -48,28 +48,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ---------------------------------------------------------------------------
-# Startup
-# ---------------------------------------------------------------------------
-
 @app.on_event("startup")
 def on_startup():
     init_db()
 
-
-# ---------------------------------------------------------------------------
-# Auth dependency
-# ---------------------------------------------------------------------------
-
 def require_admin(x_admin_key: Optional[str] = Header(default=None)):
     if x_admin_key != ADMIN_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid or missing admin key.")
-
-
-# ---------------------------------------------------------------------------
-# Pydantic schemas
-# ---------------------------------------------------------------------------
 
 class EventIn(BaseModel):
     event_number: int
@@ -185,11 +170,6 @@ def parse_team_names(raw_team_names: Optional[str]) -> List[str]:
         return []
     return normalize_team_names(parsed)
 
-
-# ---------------------------------------------------------------------------
-# Public: active meet
-# ---------------------------------------------------------------------------
-
 @app.get("/meet/active")
 def get_active_meet(db: Session = Depends(get_db)):
     """
@@ -222,11 +202,6 @@ def get_active_meet(db: Session = Depends(get_db)):
             for e in sorted(meet.events, key=lambda x: x.event_number)
         ],
     }
-
-
-# ---------------------------------------------------------------------------
-# Public: submit entries
-# ---------------------------------------------------------------------------
 
 @app.post("/entries", status_code=201)
 def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
@@ -290,11 +265,6 @@ def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
 
     db.commit()
     return {"message": f"Successfully submitted {len(created)} entry/entries.", "count": len(created)}
-
-
-# ---------------------------------------------------------------------------
-# Admin: meet management
-# ---------------------------------------------------------------------------
 
 @app.get("/admin/meets", dependencies=[Depends(require_admin)])
 def list_meets(db: Session = Depends(get_db)):
@@ -436,11 +406,6 @@ def delete_meet(meet_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Meet and all associated events and entries deleted."}
 
-
-# ---------------------------------------------------------------------------
-# Admin: entries viewer
-# ---------------------------------------------------------------------------
-
 @app.get("/admin/entries", dependencies=[Depends(require_admin)])
 def get_entries(
     meet_id: int = Query(..., description="ID of the meet to fetch entries for"),
@@ -520,11 +485,6 @@ def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Entry deleted."}
 
-
-# ---------------------------------------------------------------------------
-# Admin: CSV export
-# ---------------------------------------------------------------------------
-
 @app.get("/admin/export/csv", dependencies=[Depends(require_admin)])
 def export_csv(
     meet_id: int = Query(...),
@@ -550,11 +510,6 @@ def export_csv(
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
-
-# ---------------------------------------------------------------------------
-# Admin: Hy-Tek .hy3 export
-# ---------------------------------------------------------------------------
-
 @app.get("/admin/export/hy3", dependencies=[Depends(require_admin)])
 def export_hy3(
     meet_id: int = Query(...),
@@ -579,11 +534,6 @@ def export_hy3(
         media_type="application/octet-stream",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
-
-
-# ---------------------------------------------------------------------------
-# Health check
-# ---------------------------------------------------------------------------
 
 @app.get("/health")
 def health():
