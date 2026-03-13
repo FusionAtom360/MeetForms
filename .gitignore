@@ -1,7 +1,5 @@
-backend/.env
-backend/__pycache__
-.firebaserc
-.firebase
+.firebaserc/
+.firebase/
 firebase.json
-.github
-.vscode
+.github/
+.vscode/
