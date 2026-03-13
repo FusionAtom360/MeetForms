@@ -19,7 +19,16 @@
       --accent: #f0a500;
       --green:  #00c48c;
       --red:    #e84545;
+      --radius-sm: 4px;
       --radius: 6px;
+      --radius-lg: 10px;
+      --border-soft: rgba(0,180,216,0.15);
+      --border-mid: rgba(0,180,216,0.2);
+      --border-strong: rgba(0,180,216,0.25);
+      --border-ghost: rgba(255,255,255,0.15);
+      --focus-ring: 0 0 0 2px rgba(0,180,216,0.2);
+      --dur-fast: 0.15s;
+      --dur-med: 0.2s;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -32,6 +41,11 @@
       flex-direction: column;
     }
 
+    /* Keep typography consistent across all form controls */
+    input, select, textarea {
+      font-family: 'Barlow', sans-serif;
+    }
+
     /* ── login overlay ── */
     #login-overlay {
       position: fixed; inset: 0; z-index: 100;
@@ -40,8 +54,8 @@
     }
     .login-box {
       background: var(--card);
-      border: 1px solid rgba(0,180,216,0.2);
-      border-radius: 10px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-lg);
       padding: 40px;
       width: 340px;
       text-align: center;
@@ -61,13 +75,15 @@
     }
     .login-box input {
       width: 100%; background: var(--input);
-      border: 1px solid rgba(0,180,216,0.25);
+      border: 1px solid var(--border-strong);
       border-radius: var(--radius);
       color: var(--white); font-family: 'Barlow', sans-serif;
       font-size: 15px; padding: 11px 14px;
       margin-bottom: 14px; text-align: center; letter-spacing: 2px;
+      transition: border-color var(--dur-med), box-shadow var(--dur-med);
     }
     .login-box input:focus { outline: none; border-color: var(--lane); }
+    .login-box input:focus-visible { box-shadow: var(--focus-ring); }
     .login-box button {
       width: 100%; padding: 12px;
       background: var(--pool); border: none;
@@ -75,7 +91,7 @@
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 16px; font-weight: 700; letter-spacing: 2px;
       text-transform: uppercase; cursor: pointer;
-      transition: background 0.2s;
+      transition: background var(--dur-med), filter var(--dur-fast);
     }
     .login-box button:hover { background: var(--lane); }
     .login-error { color: var(--red); font-size: 13px; margin-top: 10px; }
@@ -85,7 +101,7 @@
 
     /* top bar */
     .topbar {
-      background: linear-gradient(135deg, #0d2a4a 0%, #0077b6 100%);
+      background: linear-gradient(135deg, #0d2a4a 0%, var(--pool) 100%);
       border-bottom: 3px solid var(--accent);
       padding: 16px 28px;
       display: flex; align-items: center; justify-content: space-between;
@@ -102,18 +118,19 @@
     }
     .logout-btn {
       background: transparent;
-      border: 1px solid rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.28);
       border-radius: var(--radius);
       color: var(--silver); font-family: 'Barlow', sans-serif;
       font-size: 13px; font-weight: 600;
-      padding: 7px 14px; cursor: pointer; transition: all 0.2s;
+      padding: 7px 14px; cursor: pointer;
+      transition: background var(--dur-med), color var(--dur-med), border-color var(--dur-med);
     }
     .logout-btn:hover { background: rgba(255,255,255,0.1); color: var(--white); }
 
     /* tab nav */
     .tab-nav {
       display: flex;
-      border-bottom: 2px solid rgba(0,180,216,0.15);
+      border-bottom: 2px solid var(--border-soft);
       padding: 0 28px;
       background: var(--card);
     }
@@ -125,7 +142,8 @@
       letter-spacing: 2px; text-transform: uppercase;
       color: var(--mid); cursor: pointer;
       border-bottom: 3px solid transparent;
-      margin-bottom: -2px; transition: all 0.15s;
+      margin-bottom: -2px;
+      transition: color var(--dur-fast), border-color var(--dur-fast);
     }
     .tab-btn:hover { color: var(--silver); }
     .tab-btn.active { color: var(--lane); border-bottom-color: var(--lane); }
@@ -137,7 +155,7 @@
     /* ── cards ── */
     .card {
       background: var(--card);
-      border: 1px solid rgba(0,180,216,0.15);
+      border: 1px solid var(--border-soft);
       border-radius: var(--radius);
       padding: 24px;
       margin-bottom: 20px;
@@ -169,15 +187,27 @@
     input[type="text"], input[type="date"], input[type="number"],
     select, textarea {
       background: var(--input);
-      border: 1px solid rgba(0,180,216,0.2);
+      border: 1px solid var(--border-mid);
       border-radius: var(--radius);
       color: var(--white); font-family: 'Barlow', sans-serif;
       font-size: 14px; padding: 9px 12px;
-      transition: border-color 0.2s;
+      transition: border-color var(--dur-med), box-shadow var(--dur-med);
       width: 100%;
     }
     input:focus, select:focus, textarea:focus {
       outline: none; border-color: var(--lane);
+    }
+    input[type="date"]::-webkit-datetime-edit,
+    input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+    input[type="date"]::-webkit-datetime-edit-text,
+    input[type="date"]::-webkit-datetime-edit-month-field,
+    input[type="date"]::-webkit-datetime-edit-day-field,
+    input[type="date"]::-webkit-datetime-edit-year-field {
+      font-family: 'Barlow', sans-serif;
+    }
+    input:focus-visible, select:focus-visible, textarea:focus-visible,
+    .btn:focus-visible, .logout-btn:focus-visible, .tab-btn:focus-visible {
+      box-shadow: var(--focus-ring);
     }
     select option { background: var(--input); }
 
@@ -188,7 +218,8 @@
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 13px; font-weight: 700;
       letter-spacing: 1.5px; text-transform: uppercase;
-      cursor: pointer; transition: all 0.15s;
+      cursor: pointer;
+      transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast), filter var(--dur-fast);
     }
     .btn-primary { background: var(--pool); color: var(--white); }
     .btn-primary:hover { background: var(--lane); }
@@ -196,7 +227,7 @@
     .btn-accent:hover { filter: brightness(1.1); }
     .btn-danger  { background: transparent; color: var(--red); border: 1px solid var(--red); }
     .btn-danger:hover { background: rgba(232,69,69,0.12); }
-    .btn-ghost   { background: transparent; color: var(--silver); border: 1px solid rgba(255,255,255,0.15); }
+    .btn-ghost   { background: transparent; color: var(--silver); border: 1px solid var(--border-ghost); }
     .btn-ghost:hover { background: rgba(255,255,255,0.06); color: var(--white); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-sm { padding: 9px 12px; font-size: 11px; }
@@ -230,7 +261,7 @@
       background: linear-gradient(90deg, var(--input) 25%, rgba(0,119,182,0.15) 50%, var(--input) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
     }
     @keyframes shimmer {
       0%   { background-position: 200% 0; }
@@ -271,14 +302,14 @@
     /* ── events editor (textarea-based for simplicity) ── */
     .events-editor-wrap { margin-top: 14px; }
     .events-editor-wrap textarea {
-      font-family: 'Barlow Semi Condensed', monospace;
+      font-family: 'Barlow', sans-serif;
       font-size: 13px; line-height: 1.7;
       min-height: 180px; resize: vertical;
     }
     .teams-editor {
       min-height: 120px;
       resize: vertical;
-      font-family: 'Barlow Semi Condensed', monospace;
+      font-family: 'Barlow', sans-serif;
       line-height: 1.6;
     }
     .events-hint {
@@ -297,7 +328,7 @@
       font-size: 11px; font-weight: 700;
       letter-spacing: 2px; text-transform: uppercase;
       color: var(--mid); text-align: left;
-      padding: 10px 12px; border-bottom: 1px solid rgba(0,180,216,0.15);
+      padding: 10px 12px; border-bottom: 1px solid var(--border-soft);
     }
     td {
       padding: 10px 12px;
@@ -388,7 +419,7 @@
       flex: 1;
       text-align: center;
       padding: 8px 14px;
-      border: 1px solid rgba(0,180,216,0.25);
+      border: 1px solid var(--border-strong);
       border-radius: var(--radius);
       cursor: pointer;
       font-size: 11px;
@@ -397,12 +428,63 @@
       text-transform: uppercase;
       color: var(--silver);
       background: var(--input);
-      transition: all 0.15s;
+      transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
     }
     .cat-toggle input[type="radio"]:checked + label {
       background: var(--pool);
       border-color: var(--lane);
       color: var(--white);
+    }
+
+    /* ── utility classes for consistent spacing/inline controls ── */
+    .field-span-2 { grid-column: span 2; }
+    .field-gap-sm { margin-bottom: 14px; }
+    .field-gap-md { margin-bottom: 16px; }
+    .checkbox-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--silver);
+      letter-spacing: 0;
+      text-transform: none;
+      margin-top: 30px;
+    }
+    .checkbox-inline input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--pool);
+    }
+    .helper-note {
+      font-size: 10px;
+      color: var(--mid);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .table-scroll { overflow-x: auto; }
+
+    @media (max-width: 860px) {
+      .topbar,
+      .tab-nav,
+      .tab-content {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .topbar {
+        gap: 12px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .meet-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .meet-actions {
+        width: 100%;
+        flex-wrap: wrap;
+      }
     }
 
     /* ── print styles ── */
@@ -462,7 +544,7 @@
         <span class="card-title">Create New Meet</span>
       </div>
       <div class="field-row">
-        <div class="field" style="grid-column: span 2">
+        <div class="field field-span-2">
           <label class="fl">Meet Name</label>
           <input type="text" id="new-name" placeholder="VOL Championships" />
         </div>
@@ -487,14 +569,14 @@
           </select>
         </div>
         <div class="field">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--silver);letter-spacing:0;text-transform:none;margin-top:30px;">
-            <input type="checkbox" id="new-active" style="width:16px;height:16px;accent-color:var(--pool);" />
+          <label class="checkbox-inline">
+            <input type="checkbox" id="new-active" />
             Set as active meet
           </label>
         </div>
       </div>
 
-      <div class="field" style="margin-bottom:14px;">
+      <div class="field field-gap-sm">
         <label class="fl">Category</label>
         <div class="cat-toggle">
           <input type="radio" name="new-category-type" id="cat-age-group" value="age_group" checked />
@@ -504,20 +586,20 @@
         </div>
       </div>
 
-      <div class="field" style="margin-bottom:16px;">
+      <div class="field field-gap-md">
         <label class="fl">Teams</label>
         <textarea id="new-teams" class="teams-editor" placeholder="Enter one team per line"></textarea>
         <div class="events-hint">These team names will appear as the signup dropdown options.</div>
       </div>
 
-      <div class="field" style="margin-bottom:16px;">
-        <label class="fl">Description <span style="font-size:10px;color:var(--mid);font-weight:400;text-transform:none;letter-spacing:0;">(optional — shown above the sign-up form)</span></label>
+      <div class="field field-gap-md">
+        <label class="fl">Description <span class="helper-note">(optional — shown above the sign-up form)</span></label>
         <textarea id="new-description" style="min-height:80px;resize:vertical;" placeholder="Enter any additional info to display to athletes above the registration form…"></textarea>
       </div>
 
       <div class="events-editor-wrap">
         <label class="fl">Events</label>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table id="events-table" style="width:100%;margin-bottom:8px;background:var(--input);border-radius:var(--radius);">
             <thead>
               <tr>

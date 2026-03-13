@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meet Sign-Up</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Meet Sign-Up" />
+  <meta property="og:title" content="Oakdale Meet Sign-Up" />
+  <meta property="og:description" content="Sign up for an upcoming swim meet." />
+  <meta property="og:url" content="https://oakdale-meet-signups.web.app" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -19,7 +24,14 @@
       --accent: #f0a500;
       --green:  #00c48c;
       --red:    #e84545;
+      --radius-sm: 4px;
       --radius: 6px;
+      --border-soft: rgba(0,180,216,0.18);
+      --border-mid: rgba(0,180,216,0.2);
+      --border-strong: rgba(0,180,216,0.25);
+      --focus-ring: 0 0 0 3px rgba(0,180,216,0.15);
+      --dur-fast: 0.15s;
+      --dur-med: 0.2s;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,6 +44,11 @@
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
+    }
+
+    /* Keep form control typography consistent */
+    input, select, textarea {
+      font-family: 'Barlow', sans-serif;
     }
 
     /* ── lane-line background ── */
@@ -54,7 +71,7 @@
     header {
       position: relative;
       z-index: 1;
-      background: linear-gradient(135deg, #0d2a4a 0%, #0077b6 100%);
+      background: linear-gradient(135deg, #0d2a4a 0%, var(--pool) 100%);
       border-bottom: 3px solid var(--accent);
       padding: 28px 32px 24px;
       display: flex;
@@ -107,7 +124,7 @@
     /* ── section card ── */
     .card {
       background: var(--card);
-      border: 1px solid rgba(0,180,216,0.18);
+      border: 1px solid var(--border-soft);
       border-radius: var(--radius);
       padding: 28px;
       margin-bottom: 20px;
@@ -130,7 +147,7 @@
       color: var(--lane);
       margin-bottom: 20px;
       padding-bottom: 10px;
-      border-bottom: 1px solid rgba(0,180,216,0.2);
+      border-bottom: 1px solid var(--border-mid);
     }
 
     /* ── form grid ── */
@@ -157,20 +174,20 @@
     input[type="number"],
     select {
       background: var(--input);
-      border: 1px solid rgba(0,180,216,0.25);
+      border: 1px solid var(--border-strong);
       border-radius: var(--radius);
       color: var(--white);
       font-family: 'Barlow', sans-serif;
       font-size: 15px;
       padding: 10px 12px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color var(--dur-med), box-shadow var(--dur-med);
       width: 100%;
       appearance: none;
     }
     input:focus, select:focus {
       outline: none;
       border-color: var(--lane);
-      box-shadow: 0 0 0 3px rgba(0,180,216,0.15);
+      box-shadow: var(--focus-ring);
     }
     input.error, select.error {
       border-color: var(--red);
@@ -193,7 +210,7 @@
       font-size: 13px;
       font-weight: 600;
       letter-spacing: 1px;
-      transition: all 0.15s;
+      transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
       color: var(--silver);
       background: var(--input);
     }
@@ -218,7 +235,7 @@
       padding: 10px 14px;
       border-radius: var(--radius);
       border: 1px solid transparent;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background var(--dur-fast), border-color var(--dur-fast);
       cursor: pointer;
     }
     .event-row:hover { background: rgba(0,119,182,0.12); }
@@ -233,11 +250,11 @@
       width: 22px;
       height: 22px;
       border: 2px solid var(--mid);
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.15s;
+      transition: background var(--dur-fast), border-color var(--dur-fast);
       flex-shrink: 0;
     }
     .event-row.selected .event-check {
@@ -272,14 +289,14 @@
     }
     .time-input-wrap input {
       text-align: center;
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: 'Barlow', sans-serif;
       font-size: 17px;
       font-weight: 600;
       letter-spacing: 1px;
       padding: 8px 10px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s;
+      transition: opacity var(--dur-med);
     }
     .event-row.selected .time-input-wrap input {
       opacity: 1;
@@ -291,7 +308,7 @@
       text-align: center;
       margin-top: 2px;
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: opacity var(--dur-med);
     }
     .event-row.selected .time-hint { opacity: 1; }
 
@@ -326,7 +343,7 @@
       background: linear-gradient(90deg, var(--input) 25%, rgba(0,119,182,0.15) 50%, var(--input) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       height: 18px;
       margin-bottom: 8px;
     }
@@ -349,7 +366,7 @@
       letter-spacing: 2px;
       text-transform: uppercase;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      transition: background var(--dur-med), transform 0.1s;
       margin-top: 8px;
     }
     .submit-btn:hover:not(:disabled) {
@@ -415,9 +432,36 @@
       font-size: 16px; font-weight: 700;
       letter-spacing: 2px; text-transform: uppercase;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background var(--dur-med), color var(--dur-med), border-color var(--dur-med);
     }
     .another-btn:hover { background: var(--pool); color: var(--white); }
+
+    .desc-card { padding: 20px 24px; }
+    .desc-text {
+      color: var(--silver);
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .no-events-msg {
+      display: none;
+      text-align: center;
+      padding: 24px 0;
+      color: var(--mid);
+      font-size: 14px;
+    }
+    .submit-card { padding: 20px 28px; }
+    .site-footer {
+      position: relative;
+      z-index: 1;
+      background: var(--card);
+      border-top: 1px solid var(--border-mid);
+      padding: 16px;
+      text-align: center;
+      color: var(--silver);
+      font-size: 12px;
+      margin-top: auto;
+    }
 
     /* ── responsive ── */
     @media (max-width: 560px) {
@@ -445,25 +489,27 @@
 </main>
 
 <script>
-// ─────────────────────────────────────────────────────────────
-// CONFIG — swap this for your Railway URL when deployed
-// ─────────────────────────────────────────────────────────────
 const API_BASE = 'https://fusionatom360.duckdns.org';
 
-// ─────────────────────────────────────────────────────────────
-// State
-// ─────────────────────────────────────────────────────────────
 let activeMeet   = null;
 let allEvents    = [];
 let selectedEvts = new Set();   // event IDs currently checked
+
+function updateOpenGraphMeta(meetName) {
+  const fallback = 'Meet Sign-Up';
+  const title = (meetName && String(meetName).trim()) ? `${meetName} | ${fallback}` : fallback;
+  document.title = title;
+
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) {
+    ogTitle.setAttribute('content', title);
+  }
+}
 
 function getTeamOptions() {
   return Array.isArray(activeMeet?.team_names) ? activeMeet.team_names : [];
 }
 
-// ─────────────────────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────────────────────
 async function init() {
   const app = document.getElementById('app');
   app.innerHTML = renderSkeleton();
@@ -473,6 +519,7 @@ async function init() {
     if (!res.ok) throw new Error('no_meet');
     activeMeet = await res.json();
     allEvents  = activeMeet.events;
+    updateOpenGraphMeta(activeMeet.name);
 
     document.getElementById('meet-title').textContent  = activeMeet.name;
     document.getElementById('meet-venue').textContent  = formatDate(activeMeet.date);
@@ -497,6 +544,7 @@ async function init() {
     bindFormEvents();
 
   } catch (e) {
+    updateOpenGraphMeta(null);
     document.getElementById('meet-title').textContent = 'No Open Meet';
     app.innerHTML = `
       <div class="no-meet">
@@ -507,9 +555,6 @@ async function init() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Render helpers
-// ─────────────────────────────────────────────────────────────
 function renderSkeleton() {
   return `<div class="card">
     ${[1,2,3].map(() => `<div class="skeleton" style="width:${60+Math.random()*35}%"></div>`).join('')}
@@ -521,8 +566,8 @@ function renderForm() {
   const isDivision = activeMeet?.category_type === 'division';
 
   const descriptionHtml = activeMeet?.description ? `
-    <div class="card" style="padding:20px 24px;">
-      <p style="color:var(--silver);font-size:14px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(activeMeet.description)}</p>
+    <div class="card desc-card">
+      <p class="desc-text">${escapeHtml(activeMeet.description)}</p>
     </div>` : '';
 
   const ageOrDivisionField = isDivision ? `
@@ -623,18 +668,15 @@ function renderForm() {
     <div class="card">
       <div class="card-title">Select Events &amp; Entry Times</div>
       <div id="events-container">${eventsHtml}</div>
-      <div id="no-events-msg" style="display:none;text-align:center;padding:24px 0;color:var(--mid);font-size:14px;">No events match your age and gender.</div>
+      <div id="no-events-msg" class="no-events-msg">No events match your age and gender.</div>
       <span class="field-error" id="err-events" style="display:block;margin-top:10px"></span>
     </div>
 
-    <div class="card" style="padding:20px 28px;">
+    <div class="card submit-card">
       <button class="submit-btn" onclick="submitForm()">Submit Entries</button>
     </div>`;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Event toggle
-// ─────────────────────────────────────────────────────────────
 function toggleEvent(id) {
   const row = document.querySelector(`.event-row[data-id="${id}"]`);
   const cb  = document.getElementById(`evt-${id}`);
@@ -650,17 +692,11 @@ function toggleEvent(id) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Time input auto-formatter
-// ─────────────────────────────────────────────────────────────
 function formatTimeInput(el) {
   let v = el.value.replace(/[^0-9:.]/g, '');
   el.value = v;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Event visibility filter (by age + gender)
-// ─────────────────────────────────────────────────────────────
 function matchesGender(evGender, selectedGender) {
   const normalized = String(evGender || '').trim().toUpperCase();
   if (!selectedGender) return true;
@@ -734,9 +770,6 @@ function updateEventVisibility() {
   if (msg) msg.style.display = anyVisible ? 'none' : '';
 }
 
-// ─────────────────────────────────────────────────────────────
-// Bind misc form events
-// ─────────────────────────────────────────────────────────────
 function bindFormEvents() {
   // Prevent time-row click from propagating on input
   document.querySelectorAll('.time-input-wrap input').forEach(inp => {
@@ -756,9 +789,6 @@ function bindFormEvents() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Validation
-// ─────────────────────────────────────────────────────────────
 function clearErrors() {
   document.querySelectorAll('.field-error').forEach(el => el.textContent = '');
   document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
@@ -817,9 +847,6 @@ function validate() {
   return ok;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Submit
-// ─────────────────────────────────────────────────────────────
 async function submitForm() {
   if (!validate()) return;
 
@@ -890,9 +917,6 @@ async function submitForm() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Reset for another athlete
-// ─────────────────────────────────────────────────────────────
 function resetForm() {
   selectedEvts.clear();
   document.getElementById('app').innerHTML = renderForm();
@@ -900,9 +924,6 @@ function resetForm() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ─────────────────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────────────────
 function formatDate(iso) {
   const [y, m, d] = iso.split('-');
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -926,13 +947,10 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-// ─────────────────────────────────────────────────────────────
-// Boot
-// ─────────────────────────────────────────────────────────────
 init();
 </script>
 
-<footer style="position: relative; z-index: 1; background: var(--card); border-top: 1px solid rgba(0,180,216,0.2); padding: 16px; text-align: center; color: var(--silver); font-size: 12px; margin-top: auto;">
+<footer class="site-footer">
   © 2026 Joseph Yakligian. All rights reserved.
 </footer>
 
