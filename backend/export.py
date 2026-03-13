@@ -10,10 +10,6 @@ from typing import List
 from models import Entry, Meet
 
 
-# ---------------------------------------------------------------------------
-# CSV Export
-# ---------------------------------------------------------------------------
-
 def generate_csv(meet: Meet, entries: List[Entry]) -> str:
     """
     Returns a CSV string with one row per entry.
@@ -24,46 +20,42 @@ def generate_csv(meet: Meet, entries: List[Entry]) -> str:
     writer = csv.writer(output)
 
     # Header row
-    writer.writerow([
-        "Last Name", "First Name", "Age", "Gender", "Team",
-        "Event #", "Event Name", "Distance", "Stroke",
-        "Age Group", "Entry Time", "Submitted At"
-    ])
+    writer.writerow(
+        [
+            "Last Name",
+            "First Name",
+            "Age",
+            "Gender",
+            "Team",
+            "Event #",
+            "Event Name",
+            "Distance",
+            "Stroke",
+            "Age Group",
+            "Entry Time",
+            "Submitted At",
+        ]
+    )
 
     for e in entries:
-        writer.writerow([
-            e.last_name,
-            e.first_name,
-            e.age,
-            e.gender,
-            e.team,
-            e.event.event_number,
-            e.event.distance,
-            e.event.stroke,
-            e.event.age_group,
-            e.entry_time,
-            e.submitted_at.strftime("%Y-%m-%d %H:%M:%S") if e.submitted_at else "",
-        ])
+        writer.writerow(
+            [
+                e.last_name,
+                e.first_name,
+                e.age,
+                e.gender,
+                e.team,
+                e.event.event_number,
+                e.event.distance,
+                e.event.stroke,
+                e.event.age_group,
+                e.entry_time,
+                e.submitted_at.strftime("%Y-%m-%d %H:%M:%S") if e.submitted_at else "",
+            ]
+        )
 
     return output.getvalue()
 
-
-# ---------------------------------------------------------------------------
-# Hy-Tek SD3 (.hy3) Export
-# ---------------------------------------------------------------------------
-#
-# SD3 is a fixed-width flat-file format.  Each line starts with a 2-char
-# record type code.  Only the record types needed for a basic meet entry
-# file are implemented here.  Full spec: Hy-Tek SD3 File Format Reference.
-#
-# Record types used:
-#   A0  — file / vendor header
-#   B1  — meet record
-#   C1  — team record (one per distinct team)
-#   D0  — athlete record (one per distinct athlete)
-#   E0  — individual entry (one per entry row)
-#   Z0  — file checksum / footer
-# ---------------------------------------------------------------------------
 
 def _pad(value: str, length: int, align: str = "left", fill: str = " ") -> str:
     """Pad or truncate a string to exactly `length` characters."""
@@ -93,12 +85,16 @@ def _hy3_time(entry_time: str) -> str:
             minutes = int(parts[0])
             sec_parts = parts[1].split(".")
             seconds = int(sec_parts[0])
-            hundredths = int(sec_parts[1].ljust(2, "0")[:2]) if len(sec_parts) > 1 else 0
+            hundredths = (
+                int(sec_parts[1].ljust(2, "0")[:2]) if len(sec_parts) > 1 else 0
+            )
         else:
             sec_parts = entry_time.split(".")
             minutes = 0
             seconds = int(sec_parts[0])
-            hundredths = int(sec_parts[1].ljust(2, "0")[:2]) if len(sec_parts) > 1 else 0
+            hundredths = (
+                int(sec_parts[1].ljust(2, "0")[:2]) if len(sec_parts) > 1 else 0
+            )
 
         total_hundredths = (minutes * 60 + seconds) * 100 + hundredths
         return str(total_hundredths).rjust(8)
@@ -109,15 +105,15 @@ def _hy3_time(entry_time: str) -> str:
 def _stroke_code(stroke: str) -> str:
     """Map stroke name to SD3 stroke code."""
     mapping = {
-        "freestyle":   "1",
-        "backstroke":  "2",
-        "breaststroke":"3",
-        "butterfly":   "4",
-        "im":          "5",
+        "freestyle": "1",
+        "backstroke": "2",
+        "breaststroke": "3",
+        "butterfly": "4",
+        "im": "5",
         "individual medley": "5",
-        "medley relay":"6",
-        "freestyle relay":"7",
-        "relay":       "6",
+        "medley relay": "6",
+        "freestyle relay": "7",
+        "relay": "6",
     }
     return mapping.get(stroke.lower().strip(), "1")
 
@@ -145,7 +141,7 @@ def generate_hy3(meet: Meet, entries: List[Entry]) -> str:
 
     # ── A0: File / vendor header ──────────────────────────────────────────
     # Positions: 1-2 record type, 3-47 vendor name, 48-51 version, 52-59 date
-    a0  = "A0"
+    a0 = "A0"
     a0 += _pad("SwimMeetSignup Custom Export", 45)
     a0 += _pad("1.00", 4)
     a0 += _pad(today, 8)
@@ -161,12 +157,12 @@ def generate_hy3(meet: Meet, entries: List[Entry]) -> str:
     except Exception:
         meet_date_formatted = today
 
-    b1  = "B1"
+    b1 = "B1"
     b1 += _pad(meet.name, 30)
-    b1 += _pad(meet_date_formatted, 8)   # start date
-    b1 += _pad(meet_date_formatted, 8)   # end date (same day; adjust if multi-day)
+    b1 += _pad(meet_date_formatted, 8)  # start date
+    b1 += _pad(meet_date_formatted, 8)  # end date (same day; adjust if multi-day)
     b1 += _course_code(meet.course)
-    b1 += _pad("", 10)                   # facility (blank)
+    b1 += _pad("", 10)  # facility (blank)
     lines.append(b1)
 
     # ── Collect distinct teams and athletes ───────────────────────────────
@@ -185,10 +181,10 @@ def generate_hy3(meet: Meet, entries: List[Entry]) -> str:
     for team in teams:
         # C1: Team record
         # Positions: 1-2 type, 3-7 team abbrev, 8-37 team full name, 38 gender (X=open)
-        c1  = "C1"
-        c1 += _pad(team[:5].upper(), 5)   # abbreviation (up to 5 chars)
-        c1 += _pad(team, 30)              # full name
-        c1 += "X"                         # gender = open/mixed
+        c1 = "C1"
+        c1 += _pad(team[:5].upper(), 5)  # abbreviation (up to 5 chars)
+        c1 += _pad(team, 30)  # full name
+        c1 += "X"  # gender = open/mixed
         lines.append(c1)
 
         team_athletes = {k: v for k, v in athletes.items() if k[4] == team}
@@ -198,14 +194,14 @@ def generate_hy3(meet: Meet, entries: List[Entry]) -> str:
             # Positions: 1-2 type, 3-22 last, 23-42 first, 43-44 age,
             #            45 gender, 46-50 team abbrev, 51-58 birth date (blank ok),
             #            59-66 USS# (blank ok), 67-72 athlete ID (sequential)
-            d0  = "D0"
-            d0 += _pad(last,   20)
-            d0 += _pad(first,  20)
+            d0 = "D0"
+            d0 += _pad(last, 20)
+            d0 += _pad(first, 20)
             d0 += _pad(str(age), 2, align="right")
             d0 += _gender_code(gender)
             d0 += _pad(team[:5].upper(), 5)
-            d0 += _pad("", 8)   # birth date blank
-            d0 += _pad("", 8)   # USS# blank
+            d0 += _pad("", 8)  # birth date blank
+            d0 += _pad("", 8)  # USS# blank
             d0 += _pad(str(athlete_serial).zfill(6), 6)
             lines.append(d0)
 
@@ -213,7 +209,7 @@ def generate_hy3(meet: Meet, entries: List[Entry]) -> str:
             for e in athlete_entries:
                 # Positions: 1-2 type, 3-8 athlete ID, 9 stroke, 10-13 distance,
                 #            14 course, 15-22 entry time (hundredths), 23 time code (A=actual/NT)
-                e0  = "E0"
+                e0 = "E0"
                 e0 += _pad(str(athlete_serial).zfill(6), 6)
                 e0 += _stroke_code(e.event.stroke)
                 e0 += _pad(str(e.event.distance), 4, align="right")

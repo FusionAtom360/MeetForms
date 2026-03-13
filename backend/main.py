@@ -26,7 +26,7 @@ import io
 
 from fastapi import FastAPI, Depends, HTTPException, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse #, JSONResponse
+from fastapi.responses import StreamingResponse  # , JSONResponse
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
@@ -36,7 +36,7 @@ from export import generate_csv, generate_hy3
 
 load_dotenv()
 
-ADMIN_API_KEY   = os.getenv("ADMIN_API_KEY", "change-me")
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "change-me")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "*")
 
 app = FastAPI(title="Swim Meet Signup API", version="1.0.0")
@@ -48,47 +48,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def on_startup():
     init_db()
+
 
 def require_admin(x_admin_key: Optional[str] = Header(default=None)):
     if x_admin_key != ADMIN_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid or missing admin key.")
 
+
 class EventIn(BaseModel):
     event_number: int
-    distance:     int
-    stroke:       str
-    gender:       str       # "M" | "F" | "X"
-    age_group:    str       # "11-12", "Open", etc.
+    distance: int
+    stroke: str
+    gender: str  # "M" | "F" | "X"
+    age_group: str  # "11-12", "Open", etc.
+
 
 class MeetIn(BaseModel):
-    name:          str
-    date:          str          # "YYYY-MM-DD"
-    deadline:      Optional[str] = None  # "YYYY-MM-DD"
-    course:        str          # "LCM" | "SCY" | "SCM"
-    location:      Optional[str] = None  # meet location/pool name
-    description:   Optional[str] = None  # shown above sign-up form
-    category_type: str = "age_group"     # "age_group" | "division"
-    team_names:    List[str] = []
-    is_active:     bool = False
-    events:        List[EventIn] = []
+    name: str
+    date: str  # "YYYY-MM-DD"
+    deadline: Optional[str] = None  # "YYYY-MM-DD"
+    course: str  # "LCM" | "SCY" | "SCM"
+    location: Optional[str] = None  # meet location/pool name
+    description: Optional[str] = None  # shown above sign-up form
+    category_type: str = "age_group"  # "age_group" | "division"
+    team_names: List[str] = []
+    is_active: bool = False
+    events: List[EventIn] = []
+
 
 class MeetUpdate(BaseModel):
-    name:          Optional[str]  = None
-    date:          Optional[str]  = None
-    deadline:      Optional[str]  = None
-    course:        Optional[str]  = None
-    location:      Optional[str]  = None
-    description:   Optional[str]  = None
-    category_type: Optional[str]  = None     # "age_group" | "division"
-    team_names:    Optional[List[str]] = None
-    is_active:     Optional[bool] = None
-    events:        Optional[List[EventIn]] = None   # if provided, replaces all events
+    name: Optional[str] = None
+    date: Optional[str] = None
+    deadline: Optional[str] = None
+    course: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
+    category_type: Optional[str] = None  # "age_group" | "division"
+    team_names: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+    events: Optional[List[EventIn]] = None  # if provided, replaces all events
+
 
 class SingleEntryIn(BaseModel):
-    event_id:   int
+    event_id: int
     entry_time: str = "NT"
 
     @field_validator("entry_time")
@@ -124,16 +130,18 @@ class EntryUpdate(BaseModel):
             return None
         return v.strip() or "NT"
 
+
 class AthleteEntriesIn(BaseModel):
     """One submission = one athlete + one or more events."""
-    last_name:  str
+
+    last_name: str
     first_name: str
-    age:        int = 0     # 0 for division-type meets
-    division:   Optional[str] = None  # "JV" | "Varsity" for division-type meets
-    team:       str
-    gender:     str         # "M" | "F"
-    meet_id:    int
-    entries:    List[SingleEntryIn]
+    age: int = 0  # 0 for division-type meets
+    division: Optional[str] = None  # "JV" | "Varsity" for division-type meets
+    team: str
+    gender: str  # "M" | "F"
+    meet_id: int
+    entries: List[SingleEntryIn]
 
     @field_validator("gender")
     @classmethod
@@ -170,6 +178,7 @@ def parse_team_names(raw_team_names: Optional[str]) -> List[str]:
         return []
     return normalize_team_names(parsed)
 
+
 @app.get("/meet/active")
 def get_active_meet(db: Session = Depends(get_db)):
     """
@@ -178,30 +187,33 @@ def get_active_meet(db: Session = Depends(get_db)):
     """
     meet = db.query(Meet).filter(Meet.is_active == True).first()
     if not meet:
-        raise HTTPException(status_code=404, detail="No meet is currently open for registration.")
+        raise HTTPException(
+            status_code=404, detail="No meet is currently open for registration."
+        )
 
     return {
-        "id":            meet.id,
-        "name":          meet.name,
-        "date":          meet.date,
-        "deadline":      meet.deadline,
-        "course":        meet.course,
-        "location":      meet.location,
-        "description":   meet.description,
+        "id": meet.id,
+        "name": meet.name,
+        "date": meet.date,
+        "deadline": meet.deadline,
+        "course": meet.course,
+        "location": meet.location,
+        "description": meet.description,
         "category_type": meet.category_type or "age_group",
         "team_names": parse_team_names(meet.team_names),
         "events": [
             {
-                "id":           e.id,
+                "id": e.id,
                 "event_number": e.event_number,
-                "gender":       e.gender,
-                "age_group":    e.age_group,
-                "distance":     e.distance,
-                "stroke":       e.stroke,
+                "gender": e.gender,
+                "age_group": e.age_group,
+                "distance": e.distance,
+                "stroke": e.stroke,
             }
             for e in sorted(meet.events, key=lambda x: x.event_number)
         ],
     }
+
 
 @app.post("/entries", status_code=201)
 def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
@@ -211,16 +223,25 @@ def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
       - the meet exists and is active
       - each event_id belongs to that meet
     """
-    meet = db.query(Meet).filter(Meet.id == payload.meet_id, Meet.is_active == True).first()
+    meet = (
+        db.query(Meet)
+        .filter(Meet.id == payload.meet_id, Meet.is_active == True)
+        .first()
+    )
     if not meet:
-        raise HTTPException(status_code=400, detail="Meet not found or not currently active.")
+        raise HTTPException(
+            status_code=400, detail="Meet not found or not currently active."
+        )
 
     if meet.deadline:
         today = datetime.utcnow().date()
         try:
             deadline_date = datetime.strptime(meet.deadline, "%Y-%m-%d").date()
             if today > deadline_date:
-                raise HTTPException(status_code=400, detail="The sign-up deadline for this meet has passed.")
+                raise HTTPException(
+                    status_code=400,
+                    detail="The sign-up deadline for this meet has passed.",
+                )
         except ValueError:
             pass
 
@@ -235,10 +256,15 @@ def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
 
     if meet.category_type == "division":
         if not payload.division or payload.division not in ("JV", "Varsity"):
-            raise HTTPException(status_code=400, detail="Please select a valid division (JV or Varsity).")
+            raise HTTPException(
+                status_code=400,
+                detail="Please select a valid division (JV or Varsity).",
+            )
     else:
         if payload.age < 5 or payload.age > 99:
-            raise HTTPException(status_code=400, detail="Please enter a valid age (5\u201399).")
+            raise HTTPException(
+                status_code=400, detail="Please enter a valid age (5\u201399)."
+            )
 
     valid_event_ids = {e.id for e in meet.events}
     created = []
@@ -247,37 +273,41 @@ def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
         if item.event_id not in valid_event_ids:
             raise HTTPException(
                 status_code=400,
-                detail=f"Event ID {item.event_id} does not belong to this meet."
+                detail=f"Event ID {item.event_id} does not belong to this meet.",
             )
         entry = Entry(
-            meet_id    = payload.meet_id,
-            event_id   = item.event_id,
-            last_name  = payload.last_name.strip(),
-            first_name = payload.first_name.strip(),
-            age        = payload.age,
-            division   = payload.division if meet.category_type == "division" else None,
-            team       = payload.team.strip(),
-            gender     = payload.gender,
-            entry_time = item.entry_time,
+            meet_id=payload.meet_id,
+            event_id=item.event_id,
+            last_name=payload.last_name.strip(),
+            first_name=payload.first_name.strip(),
+            age=payload.age,
+            division=payload.division if meet.category_type == "division" else None,
+            team=payload.team.strip(),
+            gender=payload.gender,
+            entry_time=item.entry_time,
         )
         db.add(entry)
         created.append(entry)
 
     db.commit()
-    return {"message": f"Successfully submitted {len(created)} entry/entries.", "count": len(created)}
+    return {
+        "message": f"Successfully submitted {len(created)} entry/entries.",
+        "count": len(created),
+    }
+
 
 @app.get("/admin/meets", dependencies=[Depends(require_admin)])
 def list_meets(db: Session = Depends(get_db)):
     meets = db.query(Meet).order_by(Meet.created_at.desc()).all()
     return [
         {
-            "id":            m.id,
-            "name":          m.name,
-            "date":          m.date,
-            "deadline":      m.deadline,
-            "course":        m.course,
-            "location":      m.location,
-            "description":   m.description,
+            "id": m.id,
+            "name": m.name,
+            "date": m.date,
+            "deadline": m.deadline,
+            "course": m.course,
+            "location": m.location,
+            "description": m.description,
             "category_type": m.category_type or "age_group",
             "team_names": parse_team_names(m.team_names),
             "is_active": m.is_active,
@@ -285,14 +315,15 @@ def list_meets(db: Session = Depends(get_db)):
             "entry_count": len(m.entries),
             "events": [
                 {
-                    "id":           e.id,
+                    "id": e.id,
                     "event_number": e.event_number,
-                    "distance":     e.distance,
-                    "stroke":       e.stroke,
-                    "gender":       e.gender,
-                    "age_group":    e.age_group,
-                } for e in sorted(m.events, key=lambda x: x.event_number)
-            ]
+                    "distance": e.distance,
+                    "stroke": e.stroke,
+                    "gender": e.gender,
+                    "age_group": e.age_group,
+                }
+                for e in sorted(m.events, key=lambda x: x.event_number)
+            ],
         }
         for m in meets
     ]
@@ -308,27 +339,27 @@ def create_meet(payload: MeetIn, db: Session = Depends(get_db)):
         db.query(Meet).update({"is_active": False})
 
     meet = Meet(
-        name          = payload.name,
-        date          = payload.date,
-        deadline      = payload.deadline,
-        course        = payload.course,
-        location      = payload.location,
-        description   = payload.description or None,
-        category_type = payload.category_type or "age_group",
-        team_names    = json.dumps(normalize_team_names(payload.team_names)),
-        is_active     = payload.is_active,
+        name=payload.name,
+        date=payload.date,
+        deadline=payload.deadline,
+        course=payload.course,
+        location=payload.location,
+        description=payload.description or None,
+        category_type=payload.category_type or "age_group",
+        team_names=json.dumps(normalize_team_names(payload.team_names)),
+        is_active=payload.is_active,
     )
     db.add(meet)
     db.flush()  # get meet.id before committing
 
     for ev in payload.events:
         event = Event(
-            meet_id      = meet.id,
-            event_number = ev.event_number,
-            distance     = ev.distance,
-            stroke       = ev.stroke,
-            gender       = ev.gender,
-            age_group    = ev.age_group,
+            meet_id=meet.id,
+            event_number=ev.event_number,
+            distance=ev.distance,
+            stroke=ev.stroke,
+            gender=ev.gender,
+            age_group=ev.age_group,
         )
         db.add(event)
 
@@ -348,14 +379,22 @@ def update_meet(meet_id: int, payload: MeetUpdate, db: Session = Depends(get_db)
     if not meet:
         raise HTTPException(status_code=404, detail="Meet not found.")
 
-    if payload.name          is not None: meet.name          = payload.name
-    if payload.date          is not None: meet.date          = payload.date
-    if payload.deadline      is not None: meet.deadline      = payload.deadline
-    if payload.course        is not None: meet.course        = payload.course
-    if payload.location      is not None: meet.location      = payload.location
-    if payload.description   is not None: meet.description   = payload.description or None
-    if payload.category_type is not None: meet.category_type = payload.category_type or "age_group"
-    if payload.team_names    is not None: meet.team_names    = json.dumps(normalize_team_names(payload.team_names))
+    if payload.name is not None:
+        meet.name = payload.name
+    if payload.date is not None:
+        meet.date = payload.date
+    if payload.deadline is not None:
+        meet.deadline = payload.deadline
+    if payload.course is not None:
+        meet.course = payload.course
+    if payload.location is not None:
+        meet.location = payload.location
+    if payload.description is not None:
+        meet.description = payload.description or None
+    if payload.category_type is not None:
+        meet.category_type = payload.category_type or "age_group"
+    if payload.team_names is not None:
+        meet.team_names = json.dumps(normalize_team_names(payload.team_names))
 
     if payload.is_active is True:
         db.query(Meet).filter(Meet.id != meet_id).update({"is_active": False})
@@ -366,7 +405,10 @@ def update_meet(meet_id: int, payload: MeetUpdate, db: Session = Depends(get_db)
     if payload.events is not None:
         # Update events in-place where event_number matches (preserves entry foreign keys),
         # insert new ones, and delete removed ones (deleting their entries first).
-        existing = {e.event_number: e for e in db.query(Event).filter(Event.meet_id == meet_id).all()}
+        existing = {
+            e.event_number: e
+            for e in db.query(Event).filter(Event.meet_id == meet_id).all()
+        }
         new_numbers = {ev.event_number for ev in payload.events}
 
         # Remove events (and their entries) that are no longer in the payload
@@ -379,19 +421,21 @@ def update_meet(meet_id: int, payload: MeetUpdate, db: Session = Depends(get_db)
         for ev in payload.events:
             if ev.event_number in existing:
                 event = existing[ev.event_number]
-                event.distance     = ev.distance
-                event.stroke       = ev.stroke
-                event.gender       = ev.gender
-                event.age_group    = ev.age_group
+                event.distance = ev.distance
+                event.stroke = ev.stroke
+                event.gender = ev.gender
+                event.age_group = ev.age_group
             else:
-                db.add(Event(
-                    meet_id      = meet_id,
-                    event_number = ev.event_number,
-                    distance     = ev.distance,
-                    stroke       = ev.stroke,
-                    gender       = ev.gender,
-                    age_group    = ev.age_group,
-                ))
+                db.add(
+                    Event(
+                        meet_id=meet_id,
+                        event_number=ev.event_number,
+                        distance=ev.distance,
+                        stroke=ev.stroke,
+                        gender=ev.gender,
+                        age_group=ev.age_group,
+                    )
+                )
 
     db.commit()
     return {"message": "Meet updated."}
@@ -406,10 +450,11 @@ def delete_meet(meet_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Meet and all associated events and entries deleted."}
 
+
 @app.get("/admin/entries", dependencies=[Depends(require_admin)])
 def get_entries(
     meet_id: int = Query(..., description="ID of the meet to fetch entries for"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Returns all entries for a meet, sorted by team then last name."""
     entries = (
@@ -420,18 +465,18 @@ def get_entries(
     )
     return [
         {
-            "id":           e.id,
-            "last_name":    e.last_name,
-            "first_name":   e.first_name,
-            "age":          e.age,
-            "division":     e.division,
-            "gender":       e.gender,
-            "team":         e.team,
-            "event_id":     e.event_id,
+            "id": e.id,
+            "last_name": e.last_name,
+            "first_name": e.first_name,
+            "age": e.age,
+            "division": e.division,
+            "gender": e.gender,
+            "team": e.team,
+            "event_id": e.event_id,
             "event_number": e.event.event_number,
-            "event_name":   f"{e.event.distance} {e.event.stroke}",
-            "age_group":    e.event.age_group,
-            "entry_time":   e.entry_time,
+            "event_name": f"{e.event.distance} {e.event.stroke}",
+            "age_group": e.event.age_group,
+            "entry_time": e.entry_time,
             "submitted_at": e.submitted_at.isoformat() if e.submitted_at else None,
         }
         for e in entries
@@ -467,9 +512,15 @@ def update_entry(entry_id: int, payload: EntryUpdate, db: Session = Depends(get_
     if payload.division is not None:
         entry.division = payload.division
     if payload.event_id is not None:
-        event = db.query(Event).filter(Event.id == payload.event_id, Event.meet_id == entry.meet_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == payload.event_id, Event.meet_id == entry.meet_id)
+            .first()
+        )
         if not event:
-            raise HTTPException(status_code=400, detail="Selected event does not belong to this meet.")
+            raise HTTPException(
+                status_code=400, detail="Selected event does not belong to this meet."
+            )
         entry.event_id = payload.event_id
 
     db.commit()
@@ -485,11 +536,9 @@ def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Entry deleted."}
 
+
 @app.get("/admin/export/csv", dependencies=[Depends(require_admin)])
-def export_csv(
-    meet_id: int = Query(...),
-    db: Session = Depends(get_db)
-):
+def export_csv(meet_id: int = Query(...), db: Session = Depends(get_db)):
     meet = db.query(Meet).filter(Meet.id == meet_id).first()
     if not meet:
         raise HTTPException(status_code=404, detail="Meet not found.")
@@ -510,11 +559,9 @@ def export_csv(
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
+
 @app.get("/admin/export/hy3", dependencies=[Depends(require_admin)])
-def export_hy3(
-    meet_id: int = Query(...),
-    db: Session = Depends(get_db)
-):
+def export_hy3(meet_id: int = Query(...), db: Session = Depends(get_db)):
     meet = db.query(Meet).filter(Meet.id == meet_id).first()
     if not meet:
         raise HTTPException(status_code=404, detail="Meet not found.")
@@ -534,6 +581,7 @@ def export_hy3(
         media_type="application/octet-stream",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
 
 @app.get("/health")
 def health():
