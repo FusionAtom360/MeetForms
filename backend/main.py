@@ -79,24 +79,28 @@ class EventIn(BaseModel):
     age_group:    str       # "11-12", "Open", etc.
 
 class MeetIn(BaseModel):
-    name:      str
-    date:      str          # "YYYY-MM-DD"
-    deadline:  Optional[str] = None  # "YYYY-MM-DD"
-    course:    str          # "LCM" | "SCY" | "SCM"
-    location:  Optional[str] = None  # meet location/pool name
-    team_names: List[str] = []
-    is_active: bool = False
-    events:    List[EventIn] = []
+    name:          str
+    date:          str          # "YYYY-MM-DD"
+    deadline:      Optional[str] = None  # "YYYY-MM-DD"
+    course:        str          # "LCM" | "SCY" | "SCM"
+    location:      Optional[str] = None  # meet location/pool name
+    description:   Optional[str] = None  # shown above sign-up form
+    category_type: str = "age_group"     # "age_group" | "division"
+    team_names:    List[str] = []
+    is_active:     bool = False
+    events:        List[EventIn] = []
 
 class MeetUpdate(BaseModel):
-    name:      Optional[str]  = None
-    date:      Optional[str]  = None
-    deadline:  Optional[str]  = None
-    course:    Optional[str]  = None
-    location:  Optional[str]  = None
-    team_names: Optional[List[str]] = None
-    is_active: Optional[bool] = None
-    events:    Optional[List[EventIn]] = None   # if provided, replaces all events
+    name:          Optional[str]  = None
+    date:          Optional[str]  = None
+    deadline:      Optional[str]  = None
+    course:        Optional[str]  = None
+    location:      Optional[str]  = None
+    description:   Optional[str]  = None
+    category_type: Optional[str]  = None     # "age_group" | "division"
+    team_names:    Optional[List[str]] = None
+    is_active:     Optional[bool] = None
+    events:        Optional[List[EventIn]] = None   # if provided, replaces all events
 
 class SingleEntryIn(BaseModel):
     event_id:   int
@@ -116,6 +120,7 @@ class EntryUpdate(BaseModel):
     gender: Optional[str] = None
     event_id: Optional[int] = None
     entry_time: Optional[str] = None
+    division: Optional[str] = None
 
     @field_validator("gender")
     @classmethod
@@ -138,7 +143,8 @@ class AthleteEntriesIn(BaseModel):
     """One submission = one athlete + one or more events."""
     last_name:  str
     first_name: str
-    age:        int
+    age:        int = 0     # 0 for division-type meets
+    division:   Optional[str] = None  # "JV" | "Varsity" for division-type meets
     team:       str
     gender:     str         # "M" | "F"
     meet_id:    int
@@ -195,12 +201,14 @@ def get_active_meet(db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No meet is currently open for registration.")
 
     return {
-        "id":       meet.id,
-        "name":     meet.name,
-        "date":     meet.date,
-        "deadline": meet.deadline,
-        "course":   meet.course,
-        "location": meet.location,
+        "id":            meet.id,
+        "name":          meet.name,
+        "date":          meet.date,
+        "deadline":      meet.deadline,
+        "course":        meet.course,
+        "location":      meet.location,
+        "description":   meet.description,
+        "category_type": meet.category_type or "age_group",
         "team_names": parse_team_names(meet.team_names),
         "events": [
             {
@@ -250,6 +258,13 @@ def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
         if submitted_team not in allowed_teams:
             raise HTTPException(status_code=400, detail="Please select a valid team.")
 
+    if meet.category_type == "division":
+        if not payload.division or payload.division not in ("JV", "Varsity"):
+            raise HTTPException(status_code=400, detail="Please select a valid division (JV or Varsity).")
+    else:
+        if payload.age < 5 or payload.age > 99:
+            raise HTTPException(status_code=400, detail="Please enter a valid age (5\u201399).")
+
     valid_event_ids = {e.id for e in meet.events}
     created = []
 
@@ -265,6 +280,7 @@ def submit_entries(payload: AthleteEntriesIn, db: Session = Depends(get_db)):
             last_name  = payload.last_name.strip(),
             first_name = payload.first_name.strip(),
             age        = payload.age,
+            division   = payload.division if meet.category_type == "division" else None,
             team       = payload.team.strip(),
             gender     = payload.gender,
             entry_time = item.entry_time,
@@ -285,12 +301,14 @@ def list_meets(db: Session = Depends(get_db)):
     meets = db.query(Meet).order_by(Meet.created_at.desc()).all()
     return [
         {
-            "id":        m.id,
-            "name":      m.name,
-            "date":      m.date,
-            "deadline":  m.deadline,
-            "course":    m.course,
-            "location":  m.location,
+            "id":            m.id,
+            "name":          m.name,
+            "date":          m.date,
+            "deadline":      m.deadline,
+            "course":        m.course,
+            "location":      m.location,
+            "description":   m.description,
+            "category_type": m.category_type or "age_group",
             "team_names": parse_team_names(m.team_names),
             "is_active": m.is_active,
             "event_count": len(m.events),
@@ -320,13 +338,15 @@ def create_meet(payload: MeetIn, db: Session = Depends(get_db)):
         db.query(Meet).update({"is_active": False})
 
     meet = Meet(
-        name      = payload.name,
-        date      = payload.date,
-        deadline  = payload.deadline,
-        course    = payload.course,
-        location  = payload.location,
-        team_names = json.dumps(normalize_team_names(payload.team_names)),
-        is_active = payload.is_active,
+        name          = payload.name,
+        date          = payload.date,
+        deadline      = payload.deadline,
+        course        = payload.course,
+        location      = payload.location,
+        description   = payload.description or None,
+        category_type = payload.category_type or "age_group",
+        team_names    = json.dumps(normalize_team_names(payload.team_names)),
+        is_active     = payload.is_active,
     )
     db.add(meet)
     db.flush()  # get meet.id before committing
@@ -358,12 +378,14 @@ def update_meet(meet_id: int, payload: MeetUpdate, db: Session = Depends(get_db)
     if not meet:
         raise HTTPException(status_code=404, detail="Meet not found.")
 
-    if payload.name      is not None: meet.name      = payload.name
-    if payload.date      is not None: meet.date      = payload.date
-    if payload.deadline  is not None: meet.deadline  = payload.deadline
-    if payload.course    is not None: meet.course    = payload.course
-    if payload.location  is not None: meet.location  = payload.location
-    if payload.team_names is not None: meet.team_names = json.dumps(normalize_team_names(payload.team_names))
+    if payload.name          is not None: meet.name          = payload.name
+    if payload.date          is not None: meet.date          = payload.date
+    if payload.deadline      is not None: meet.deadline      = payload.deadline
+    if payload.course        is not None: meet.course        = payload.course
+    if payload.location      is not None: meet.location      = payload.location
+    if payload.description   is not None: meet.description   = payload.description or None
+    if payload.category_type is not None: meet.category_type = payload.category_type or "age_group"
+    if payload.team_names    is not None: meet.team_names    = json.dumps(normalize_team_names(payload.team_names))
 
     if payload.is_active is True:
         db.query(Meet).filter(Meet.id != meet_id).update({"is_active": False})
@@ -437,11 +459,13 @@ def get_entries(
             "last_name":    e.last_name,
             "first_name":   e.first_name,
             "age":          e.age,
+            "division":     e.division,
             "gender":       e.gender,
             "team":         e.team,
             "event_id":     e.event_id,
             "event_number": e.event.event_number,
             "event_name":   f"{e.event.distance} {e.event.stroke}",
+            "age_group":    e.event.age_group,
             "entry_time":   e.entry_time,
             "submitted_at": e.submitted_at.isoformat() if e.submitted_at else None,
         }
@@ -475,6 +499,8 @@ def update_entry(entry_id: int, payload: EntryUpdate, db: Session = Depends(get_
         entry.team = submitted_team
     if payload.entry_time is not None:
         entry.entry_time = payload.entry_time
+    if payload.division is not None:
+        entry.division = payload.division
     if payload.event_id is not None:
         event = db.query(Event).filter(Event.id == payload.event_id, Event.meet_id == entry.meet_id).first()
         if not event:

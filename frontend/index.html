@@ -514,6 +514,29 @@ function renderSkeleton() {
 
 function renderForm() {
   const teamOptions = getTeamOptions();
+  const isDivision = activeMeet?.category_type === 'division';
+
+  const descriptionHtml = activeMeet?.description ? `
+    <div class="card" style="padding:20px 24px;border-color:rgba(240,165,0,0.2);background:rgba(240,165,0,0.04);">
+      <p style="color:var(--silver);font-size:14px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(activeMeet.description)}</p>
+    </div>` : '';
+
+  const ageOrDivisionField = isDivision ? `
+    <div class="field">
+      <label for="division">Division</label>
+      <select id="division">
+        <option value="">Select division</option>
+        <option value="JV">JV</option>
+        <option value="Varsity">Varsity</option>
+      </select>
+      <span class="field-error" id="err-age"></span>
+    </div>` : `
+    <div class="field">
+      <label for="age">Age</label>
+      <input type="number" id="age" min="5" max="99" />
+      <span class="field-error" id="err-age"></span>
+    </div>`;
+
   // Group events by gender + age_group
   const groups = {};
   for (const ev of allEvents) {
@@ -556,6 +579,7 @@ function renderForm() {
 
   return `
     <div id="form-error" class="form-error" style="display:none"></div>
+    ${descriptionHtml}
 
     <div class="card">
       <div class="card-title">Athlete Information</div>
@@ -570,11 +594,7 @@ function renderForm() {
           <input type="text" id="first-name" autocomplete="given-name" />
           <span class="field-error" id="err-first"></span>
         </div>
-        <div class="field">
-          <label for="age">Age</label>
-          <input type="number" id="age" min="5" max="99" />
-          <span class="field-error" id="err-age"></span>
-        </div>
+        ${ageOrDivisionField}
         <div class="field">
           <label for="team">Team</label>
           <select id="team" autocomplete="organization" ${teamOptions.length ? '' : 'disabled'}>
@@ -646,6 +666,13 @@ function matchesGender(evGender, selectedGender) {
   return normalized === selectedGender;
 }
 
+function matchesDivision(evAgeGroup, selectedDivision) {
+  if (!selectedDivision) return true;
+  const ag = String(evAgeGroup || '').trim();
+  if (/^open$/i.test(ag)) return true;
+  return ag.toLowerCase() === selectedDivision.toLowerCase();
+}
+
 function matchesAgeGroup(age, ageGroup) {
   if (!age || age < 5) return true;
   const ag = ageGroup.trim();
@@ -660,7 +687,9 @@ function matchesAgeGroup(age, ageGroup) {
 }
 
 function updateEventVisibility() {
-  const ageVal = +document.getElementById('age')?.value;
+  const isDivision = activeMeet?.category_type === 'division';
+  const ageVal = isDivision ? null : +document.getElementById('age')?.value;
+  const divisionVal = isDivision ? (document.getElementById('division')?.value || null) : null;
   const checked = document.querySelector('input[name="gender"]:checked');
   const gender = checked ? checked.value : null;
 
@@ -677,7 +706,9 @@ function updateEventVisibility() {
       headerHasVisible = false;
     } else if (el.classList.contains('event-row')) {
       const show = matchesGender(el.dataset.gender, gender)
-                && matchesAgeGroup(ageVal, el.dataset.ageGroup);
+                && (isDivision
+                    ? matchesDivision(el.dataset.ageGroup, divisionVal)
+                    : matchesAgeGroup(ageVal, el.dataset.ageGroup));
       el.style.display = show ? '' : 'none';
       if (show) {
         headerHasVisible = true;
@@ -707,12 +738,18 @@ function bindFormEvents() {
   document.querySelectorAll('.time-input-wrap input').forEach(inp => {
     inp.addEventListener('click', e => e.stopPropagation());
   });
-  // Filter events whenever gender or age changes
+  // Filter events whenever gender or age/division changes
   document.querySelectorAll('input[name="gender"]').forEach(r =>
     r.addEventListener('change', updateEventVisibility)
   );
-  const ageInput = document.getElementById('age');
-  if (ageInput) ageInput.addEventListener('input', updateEventVisibility);
+  const isDivision = activeMeet?.category_type === 'division';
+  if (isDivision) {
+    const divisionSelect = document.getElementById('division');
+    if (divisionSelect) divisionSelect.addEventListener('change', updateEventVisibility);
+  } else {
+    const ageInput = document.getElementById('age');
+    if (ageInput) ageInput.addEventListener('input', updateEventVisibility);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -733,19 +770,30 @@ function showFieldError(id, msg) {
 function validate() {
   clearErrors();
   let ok = true;
+  const isDivision = activeMeet?.category_type === 'division';
 
-  const last  = document.getElementById('last-name');
-  const first = document.getElementById('first-name');
-  const age   = document.getElementById('age');
-  const team  = document.getElementById('team');
-  const gender = document.querySelector('input[name="gender"]:checked');
+  const last     = document.getElementById('last-name');
+  const first    = document.getElementById('first-name');
+  const age      = document.getElementById('age');
+  const division = document.getElementById('division');
+  const team     = document.getElementById('team');
+  const gender   = document.querySelector('input[name="gender"]:checked');
 
   if (!last.value.trim())  { showFieldError('err-last',   'Required'); last.classList.add('error');  ok = false; }
   if (!first.value.trim()) { showFieldError('err-first',  'Required'); first.classList.add('error'); ok = false; }
-  if (!age.value || +age.value < 5 || +age.value > 99) {
-    showFieldError('err-age', 'Enter a valid age (5–99)');
-    age.classList.add('error'); ok = false;
+
+  if (isDivision) {
+    if (!division?.value) {
+      showFieldError('err-age', 'Please select a division');
+      division?.classList.add('error'); ok = false;
+    }
+  } else {
+    if (!age.value || +age.value < 5 || +age.value > 99) {
+      showFieldError('err-age', 'Enter a valid age (5–99)');
+      age.classList.add('error'); ok = false;
+    }
   }
+
   if (team.disabled) {
     showFieldError('err-team', 'No teams are configured for this meet.');
     team.classList.add('error');
@@ -775,11 +823,13 @@ async function submitForm() {
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 
-  const last   = document.getElementById('last-name').value.trim();
-  const first  = document.getElementById('first-name').value.trim();
-  const age    = +document.getElementById('age').value;
-  const team   = document.getElementById('team').value.trim();
-  const gender = document.querySelector('input[name="gender"]:checked').value;
+  const isDivision = activeMeet?.category_type === 'division';
+  const last     = document.getElementById('last-name').value.trim();
+  const first    = document.getElementById('first-name').value.trim();
+  const age      = isDivision ? 0 : +document.getElementById('age').value;
+  const division = isDivision ? document.getElementById('division').value : undefined;
+  const team     = document.getElementById('team').value.trim();
+  const gender   = document.querySelector('input[name="gender"]:checked').value;
 
   const entries = [...selectedEvts].map(id => ({
     event_id:   id,
@@ -794,6 +844,7 @@ async function submitForm() {
     gender,
     meet_id: activeMeet.id,
     entries,
+    ...(isDivision ? { division } : {}),
   };
 
   try {

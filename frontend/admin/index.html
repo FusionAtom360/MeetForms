@@ -375,6 +375,34 @@
     #toast.success { border-color: var(--green); color: var(--green); }
     #toast.error   { border-color: var(--red);   color: var(--red); }
 
+    /* ── category type toggle ── */
+    .cat-toggle {
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .cat-toggle input[type="radio"] { display: none; }
+    .cat-toggle label {
+      flex: 1;
+      text-align: center;
+      padding: 8px 14px;
+      border: 1px solid rgba(0,180,216,0.25);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--silver);
+      background: var(--input);
+      transition: all 0.15s;
+    }
+    .cat-toggle input[type="radio"]:checked + label {
+      background: var(--pool);
+      border-color: var(--lane);
+      color: var(--white);
+    }
+
     /* ── print styles ── */
     .no-print { display: none; }
     @media print {
@@ -464,10 +492,25 @@
         </div>
       </div>
 
+      <div class="field" style="margin-bottom:14px;">
+        <label class="fl">Category</label>
+        <div class="cat-toggle">
+          <input type="radio" name="new-category-type" id="cat-age-group" value="age_group" checked onchange="updateEventRowAgeGroups()" />
+          <label for="cat-age-group">Age Groups</label>
+          <input type="radio" name="new-category-type" id="cat-division" value="division" onchange="updateEventRowAgeGroups()" />
+          <label for="cat-division">Division (JV / Varsity)</label>
+        </div>
+      </div>
+
       <div class="field" style="margin-bottom:16px;">
         <label class="fl">Teams</label>
         <textarea id="new-teams" class="teams-editor" placeholder="Enter one team per line"></textarea>
         <div class="events-hint">These team names will appear as the signup dropdown options.</div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label class="fl">Description <span style="font-size:10px;color:var(--mid);font-weight:400;text-transform:none;letter-spacing:0;">(optional — shown above the sign-up form)</span></label>
+        <textarea id="new-description" style="min-height:80px;resize:vertical;" placeholder="Enter any additional info to display to athletes above the registration form…"></textarea>
       </div>
 
       <div class="events-editor-wrap">
@@ -571,7 +614,7 @@
           <thead>
             <tr>
               <th>Last</th><th>First</th>
-              <th>Age</th><th>G</th><th>Team</th>
+              <th id="col-age-header">Age</th><th>G</th><th>Team</th>
               <th>#</th><th>Event</th><th>Time</th><th>Submitted</th><th>Actions</th>
             </tr>
           </thead>
@@ -755,14 +798,16 @@ function renderMeetList() {
 
 async function createMeet() {
 
-  const name     = document.getElementById('new-name').value.trim();
-  const date     = document.getElementById('new-date').value;
-  const deadline = document.getElementById('new-deadline').value;
-  const course   = document.getElementById('new-course').value;
-  const location = document.getElementById('new-location').value.trim();
-  const team_names = getTeamsFromInput();
-  const active   = document.getElementById('new-active').checked;
-  const events   = getEventsFromTable();
+  const name        = document.getElementById('new-name').value.trim();
+  const date        = document.getElementById('new-date').value;
+  const deadline    = document.getElementById('new-deadline').value;
+  const course      = document.getElementById('new-course').value;
+  const location    = document.getElementById('new-location').value.trim();
+  const description = document.getElementById('new-description').value.trim();
+  const category_type = getCategoryType();
+  const team_names  = getTeamsFromInput();
+  const active      = document.getElementById('new-active').checked;
+  const events      = getEventsFromTable();
 
   if (!name || !date) { toast('Name and date are required.', 'error'); return; }
   if (!events.length) { toast('Add at least one event.', 'error'); return; }
@@ -770,7 +815,7 @@ async function createMeet() {
   try {
     await apiFetch('/admin/meets', {
       method: 'POST',
-      body: JSON.stringify({ name, date, deadline, course, location, team_names, is_active: active, events }),
+      body: JSON.stringify({ name, date, deadline, course, location, description, category_type, team_names, is_active: active, events }),
     });
     toast('Meet created!', 'success');
     resetMeetForm();
@@ -801,7 +846,11 @@ function copyMeet(id) {
   document.getElementById('new-course').value = meet.course;
   document.getElementById('new-location').value = meet.location || '';
   document.getElementById('new-teams').value = (meet.team_names || []).join('\n');
+  document.getElementById('new-description').value = meet.description || '';
   document.getElementById('new-active').checked = false;
+  // Set category type BEFORE adding rows
+  const copyCatVal = meet.category_type || 'age_group';
+  document.querySelectorAll('input[name="new-category-type"]').forEach(r => r.checked = r.value === copyCatVal);
   clearEventsTable();
   if (meet.events && meet.events.length) {
     for (const ev of meet.events) addEventRow(ev);
@@ -827,7 +876,11 @@ function editMeet(id) {
   document.getElementById('new-course').value = meet.course;
   document.getElementById('new-location').value = meet.location || '';
   document.getElementById('new-teams').value = (meet.team_names || []).join('\n');
+  document.getElementById('new-description').value = meet.description || '';
   document.getElementById('new-active').checked = !!meet.is_active;
+  // Set category type BEFORE adding rows so getAgeGroupOptions() reads the right value
+  const catVal = meet.category_type || 'age_group';
+  document.querySelectorAll('input[name="new-category-type"]').forEach(r => r.checked = r.value === catVal);
   clearEventsTable();
   if (meet.events && meet.events.length) {
     for (const ev of meet.events) addEventRow(ev);
@@ -841,13 +894,15 @@ function editMeet(id) {
 }
 
 async function updateMeet(id) {
-  const name     = document.getElementById('new-name').value.trim();
-  const date     = document.getElementById('new-date').value;
-  const deadline = document.getElementById('new-deadline').value;
-  const course   = document.getElementById('new-course').value;
-  const team_names = getTeamsFromInput();
-  const active   = document.getElementById('new-active').checked;
-  const events   = getEventsFromTable();
+  const name        = document.getElementById('new-name').value.trim();
+  const date        = document.getElementById('new-date').value;
+  const deadline    = document.getElementById('new-deadline').value;
+  const course      = document.getElementById('new-course').value;
+  const description = document.getElementById('new-description').value.trim();
+  const category_type = getCategoryType();
+  const team_names  = getTeamsFromInput();
+  const active      = document.getElementById('new-active').checked;
+  const events      = getEventsFromTable();
   if (!name || !date) { toast('Name and date are required.', 'error'); return; }
   if (!events.length) { toast('Add at least one event.', 'error'); return; }
 
@@ -895,7 +950,7 @@ async function updateMeet(id) {
     const location = document.getElementById('new-location').value.trim();
     await apiFetch(`/admin/meets/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ name, date, deadline, course, location, team_names, is_active: active, events }),
+      body: JSON.stringify({ name, date, deadline, course, location, description, category_type, team_names, is_active: active, events }),
     });
     toast('Meet updated!', 'success');
     resetMeetForm();
@@ -907,6 +962,41 @@ async function updateMeet(id) {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+
+// ── Category type helpers ──
+function getCategoryType() {
+  const checked = document.querySelector('input[name="new-category-type"]:checked');
+  return checked ? checked.value : 'age_group';
+}
+
+function getAgeGroupOptions(currentValue) {
+  const isDivision = getCategoryType() === 'division';
+  if (isDivision) {
+    return [
+      `<option value="Open" ${(!currentValue || /^open$/i.test(currentValue)) ? 'selected' : ''}>Open</option>`,
+      `<option value="JV" ${currentValue === 'JV' ? 'selected' : ''}>JV</option>`,
+      `<option value="Varsity" ${currentValue === 'Varsity' ? 'selected' : ''}>Varsity</option>`,
+    ].join('');
+  }
+  const ag = currentValue || '';
+  const opt = (v, label) => `<option value="${v}" ${ag === v ? 'selected' : ''}>${label || v}</option>`;
+  return [
+    `<option value="Open" ${(!ag || ag === 'Open' || ag === 'open') ? 'selected' : ''}>Open</option>`,
+    opt('8 & under'), opt('9-10'), opt('11-12'),
+    opt('13-14'), opt('15-16'), opt('17-18'),
+  ].join('');
+}
+
+function updateEventRowAgeGroups() {
+  document.querySelectorAll('#events-tbody tr').forEach(row => {
+    const selects = row.querySelectorAll('select');
+    const ageGroupSel = selects[2]; // stroke(0), gender(1), age_group(2)
+    if (ageGroupSel) {
+      const cur = ageGroupSel.value;
+      ageGroupSel.innerHTML = getAgeGroupOptions(cur);
+    }
+  });
+}
 
 // ── Event Table Logic ──
 function addEventRow(data = {}) {
@@ -946,13 +1036,7 @@ function addEventRow(data = {}) {
     </td>
     <td>
       <select style="width:120px">
-        <option value="Open" ${(data.age_group==='Open' || data.age_group==='open')?'selected':''}>Open</option>
-        <option value="8 & under" ${data.age_group==='8 & under'?'selected':''}>8 & under</option>
-        <option value="9-10" ${data.age_group==='9-10'?'selected':''}>9-10</option>
-        <option value="11-12" ${data.age_group==='11-12'?'selected':''}>11-12</option>
-        <option value="13-14" ${data.age_group==='13-14'?'selected':''}>13-14</option>
-        <option value="15-16" ${data.age_group==='15-16'?'selected':''}>15-16</option>
-        <option value="17-18" ${data.age_group==='17-18'?'selected':''}>17-18</option>
+        ${getAgeGroupOptions(data.age_group)}
       </select>
     </td>
     <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>
@@ -1002,7 +1086,10 @@ function resetMeetForm() {
   document.getElementById('new-course').value = 'SCY';
   document.getElementById('new-location').value = '';
   document.getElementById('new-teams').value = '';
+  document.getElementById('new-description').value = '';
   document.getElementById('new-active').checked = false;
+  document.getElementById('cat-age-group').checked = true;
+  document.getElementById('cat-division').checked = false;
   clearEventsTable();
   addEventRow();
 }
@@ -1092,6 +1179,12 @@ async function loadEntries() {
     renderCurrentTable();
     document.getElementById('export-bar').classList.add('visible');
     document.getElementById('stats-row').style.display   = 'grid';
+    // Update "Age" column header based on meet category
+    const hdr = document.getElementById('col-age-header');
+    if (hdr) {
+      const meet = allMeets.find(m => m.id === currentMeetId);
+      hdr.textContent = meet?.category_type === 'division' ? 'Div' : 'Age';
+    }
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -1151,13 +1244,14 @@ function renderEntryRow(entry) {
   const isEditing = editingEntryId === entry.id;
   const teamOptions = getEntryTeamOptions(entry);
   const genderOptions = ['M', 'F'];
+  const isDivMeet = getCurrentMeet()?.category_type === 'division';
 
   if (!isEditing) {
     return `
     <tr>
       <td>${escapeHtml(entry.last_name)}</td>
       <td>${escapeHtml(entry.first_name)}</td>
-      <td>${entry.age}</td>
+      <td>${isDivMeet ? escapeHtml(entry.division || '\u2014') : entry.age}</td>
       <td>${escapeHtml(entry.gender)}</td>
       <td>${escapeHtml(entry.team)}</td>
       <td style="color:var(--mid)">#${entry.event_number}</td>
@@ -1177,7 +1271,13 @@ function renderEntryRow(entry) {
     <tr>
       <td><input type="text" id="edit-last-${entry.id}" value="${escapeHtml(entry.last_name)}" /></td>
       <td><input type="text" id="edit-first-${entry.id}" value="${escapeHtml(entry.first_name)}" /></td>
-      <td><input type="number" id="edit-age-${entry.id}" min="5" max="99" value="${entry.age}" /></td>
+      <td>${isDivMeet
+        ? `<select id="edit-div-${entry.id}">
+            <option value="JV" ${entry.division === 'JV' ? 'selected' : ''}>JV</option>
+            <option value="Varsity" ${entry.division === 'Varsity' ? 'selected' : ''}>Varsity</option>
+          </select>`
+        : `<input type="number" id="edit-age-${entry.id}" min="5" max="99" value="${entry.age}" />`
+      }</td>
       <td>
         <select id="edit-gender-${entry.id}">
           ${genderOptions.map(option => `<option value="${option}" ${entry.gender === option ? 'selected' : ''}>${option}</option>`).join('')}
@@ -1198,6 +1298,8 @@ function renderEntryRow(entry) {
           <button class="btn btn-ghost btn-sm" onclick="cancelEditEntry()">Cancel</button>
         </div>
       </td>
+    </tr>`;
+}
     </tr>`;
 }
 
@@ -1237,23 +1339,32 @@ async function saveEntry(id) {
     return;
   }
 
+  const isDivMeet = getCurrentMeet()?.category_type === 'division';
   const last_name = document.getElementById(`edit-last-${id}`)?.value.trim() || '';
   const first_name = document.getElementById(`edit-first-${id}`)?.value.trim() || '';
-  const ageValue = document.getElementById(`edit-age-${id}`)?.value || '';
+  const ageValue = isDivMeet ? '0' : (document.getElementById(`edit-age-${id}`)?.value || '');
+  const divisionValue = isDivMeet ? (document.getElementById(`edit-div-${id}`)?.value || '') : null;
   const gender = document.getElementById(`edit-gender-${id}`)?.value || '';
   const team = document.getElementById(`edit-team-${id}`)?.value || '';
   const entry_time = document.getElementById(`edit-time-${id}`)?.value.trim() || 'NT';
 
   const normalizedGender = gender.trim().toUpperCase();
-  const parsedAge = parseInt(ageValue, 10);
+  const parsedAge = isDivMeet ? 0 : parseInt(ageValue, 10);
 
   if (!last_name || !first_name) {
     toast('First and last name are required.', 'error');
     return;
   }
-  if (Number.isNaN(parsedAge) || parsedAge < 5 || parsedAge > 99) {
-    toast('Enter a valid age between 5 and 99.', 'error');
-    return;
+  if (isDivMeet) {
+    if (!divisionValue || !['JV', 'Varsity'].includes(divisionValue)) {
+      toast('Please select a valid division (JV or Varsity).', 'error');
+      return;
+    }
+  } else {
+    if (Number.isNaN(parsedAge) || parsedAge < 5 || parsedAge > 99) {
+      toast('Enter a valid age between 5 and 99.', 'error');
+      return;
+    }
   }
   if (!['M', 'F'].includes(normalizedGender)) {
     toast('Gender must be M or F.', 'error');
@@ -1274,6 +1385,7 @@ async function saveEntry(id) {
         gender: normalizedGender,
         team: team.trim(),
         entry_time,
+        ...(isDivMeet ? { division: divisionValue } : {}),
       }),
     });
     editingEntryId = null;

@@ -34,9 +34,11 @@ class Meet(Base):
     deadline   = Column(String, nullable=True)            # sign-up deadline, ISO string "YYYY-MM-DD"
     course     = Column(String, nullable=False)           # "LCM" | "SCY" | "SCM"
     location   = Column(String, nullable=True)            # e.g. "Central Pool, Downtown"
-    team_names = Column(String, nullable=False, default="[]")
-    is_active  = Column(Boolean, default=False)           # only one meet should be active at a time
-    created_at = Column(DateTime, default=datetime.utcnow)
+    team_names    = Column(String, nullable=False, default="[]")
+    description   = Column(String, nullable=True)
+    category_type = Column(String, nullable=False, default="age_group")  # "age_group" | "division"
+    is_active     = Column(Boolean, default=False)           # only one meet should be active at a time
+    created_at    = Column(DateTime, default=datetime.utcnow)
 
     events  = relationship("Event",  back_populates="meet", cascade="all, delete-orphan")
     entries = relationship("Entry",  back_populates="meet", cascade="all, delete-orphan")
@@ -70,6 +72,7 @@ class Entry(Base):
     age          = Column(Integer, nullable=False)
     team         = Column(String, nullable=False)
     gender       = Column(String, nullable=False)         # "M" | "F"
+    division     = Column(String, nullable=True)          # "JV" | "Varsity" | None (for age_group meets)
 
     # Entry time stored as a plain string to preserve original formatting
     # Expected format: "MM:SS.ss" for times ≥1 min, or "SS.ss" for sprint events
@@ -102,12 +105,23 @@ def init_db():
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE meets ADD COLUMN location TEXT"))
 
+    if "description" not in meet_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE meets ADD COLUMN description TEXT"))
+
+    if "category_type" not in meet_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE meets ADD COLUMN category_type TEXT NOT NULL DEFAULT 'age_group'"))
+
     if inspector.has_table("entries"):
         entry_columns = {column["name"] for column in inspector.get_columns("entries")}
         if "submitted_at" not in entry_columns:
             with engine.begin() as connection:
                 connection.execute(text("ALTER TABLE entries ADD COLUMN submitted_at DATETIME"))
                 connection.execute(text("UPDATE entries SET submitted_at = CURRENT_TIMESTAMP WHERE submitted_at IS NULL"))
+        if "division" not in entry_columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE entries ADD COLUMN division TEXT"))
 
 
 # ---------------------------------------------------------------------------
